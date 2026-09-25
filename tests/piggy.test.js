@@ -1,6 +1,13 @@
 /* jsdom 交互冒烟测试台
-   覆盖：① 金额自由输入（元/角/分 任意组合） ② 真人民币图版 ③ 全部记录清单（含改/删）
-        ④ 小猪满度 ⑤ 流程「先金额（必填）→ 拍照(可选)」 ⑥ 持久化
+   覆盖：
+     ① 结构化：关键元素在、已删的（存钱 / 进度条 / 满度面板）真的不存在
+     ② 真人民币照片 + 点开可放大（高清版）
+     ③ 反向水位：一开始 100%，花掉往下降
+     ④ 买东西流程（金额必填、超额拦住）+ 金额自由输入
+     ⑤ 记账本：改 / 删 记录
+     ⑥ 「新的一期」：本期归档、期数 +1、小猪重新 200 元
+     ⑦ 往期分页
+     ⑧ 持久化 + 老存档迁移（sem 3）
    跑法：npm test   （或 node tests/piggy.test.js） */
 const fs = require("fs");
 const path = require("path");
@@ -8,6 +15,31 @@ const { JSDOM } = require("jsdom");
 
 const HTML_PATH = path.join(__dirname, "..", "piggy-bank.html");
 const html = fs.readFileSync(HTML_PATH, "utf8");
+
+/* 从小段源码里抠出图片表（显示版 / 高清版）。
+   应用代码是 IIFE，局部变量拿不到，所以直接从文本里解析，
+   顺便也证明了这两张表真的写进了文件里。 */
+function grabImgs(varName) {
+  const start = html.indexOf("var " + varName + " = {");
+  if (start < 0) return null;
+  /* 表可能以 `};` 或 `  };` 收尾 */
+  let end = html.indexOf("\n};", start);
+  if (end < 0) {
+    const re = /\n[ \t]*\};[ \t]*\n/g;
+    re.lastIndex = start;
+    const m2 = re.exec(html);
+    end = m2 ? m2.index : -1;
+  }
+  if (end < 0) return null;
+  const block = html.slice(start, end);
+  const out = {};
+  const re = /\b(\w+)\s*:\s*"data:image\/[^"]+"/g;
+  let m;
+  while ((m = re.exec(block))) out[m[1]] = m[0].match(/"data:[^"]+"/)[0].slice(1, -1);
+  return out;
+}
+const RMB = grabImgs("RMB");
+const RMB_HD = grabImgs("RMB_HD");
 
 let pass = 0, fail = 0;
 const fails = [];
@@ -19,309 +51,318 @@ function eq(name, actual, expect) {
   ok(name + " (= " + expect + ")", String(actual) === String(expect), "实际=" + actual);
 }
 
-const errors = [];
-const dom = new JSDOM(html, {
-  runScripts: "dangerously",
-  pretendToBeVisual: true,
-  url: "https://piggy.local/",              // 必须：否则 localStorage 抛 DOMException
-  beforeParse(win) {
-    win.HTMLCanvasElement.prototype.getContext = () => null;
-    win.confirm = () => win.__confirmAnswer !== false;
-    win.alert = () => {};
-    win.matchMedia = () => ({ matches: false, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {} });
-    win.addEventListener("error", e => errors.push(String(e.error || e.message)));
-  }
-});
-const win = dom.window, doc = win.document;
-
-const $ = (s) => doc.querySelector(s);
-const $$ = (s) => Array.from(doc.querySelectorAll(s));
-const byId = (id) => doc.getElementById(id);
-const click = (el) => { if (!el) throw new Error("click 目标不存在"); el.dispatchEvent(new win.MouseEvent("click", { bubbles: true })); };
-const closeSheet = (id) => click(byId(id).querySelector("[data-close]"));
-
-/* 往「元/角/分」输入框里打字，并触发 input 事件（模拟真实输入） */
-function setVal(id, v) {
-  const el = byId(id);
-  el.value = v === 0 || v === "" ? "" : String(v);
-  el.dispatchEvent(new win.Event("input", { bubbles: true }));
-  return el;
-}
-function typeAmt(prefix, y, j, f) {
-  setVal(prefix + "Yuan", y);
-  setVal(prefix + "Jiao", j);
-  setVal(prefix + "Fen", f);
-}
-const balNum = () => byId("balNum").textContent.trim();
-const badge  = () => byId("histCount").textContent.trim();
-const rows   = () => $$("#historyBox .hrow");
-const txt    = (el) => (el ? el.textContent.replace(/\s+/g, "") : "");
-/* 预览区只取金额本身：预览里还挂着一排真钱图，整段文本会带上「×4」这类标记 */
-function amtOf(boxId) {
-  const b = byId(boxId);
-  return ["yuan", "jiao", "fen"].map(k => {
-    const box = b.querySelector(".sp-" + k);
-    return box ? box.querySelector(".v").textContent + box.querySelector(".u").textContent : "";
-  }).join("");
-}
-
-console.log("\n=== 1. 结构与真实人民币照片 ===");
-["piggyBox", "pigLiquid", "tankWater", "tankPct", "wlSub", "balNum",
- "btnHistory", "histCount", "btnGoal", "btnBook",
- "sheetEdit", "sheetGoal", "sheetBook", "sheetHistory", "historyBox", "histSeg",
- "buyYuan", "buyJiao", "buyFen", "addYuan", "addJiao", "addFen", "editYuan", "editJiao", "editFen",
- "buyClear", "addClear", "editClear", "buyOverTip", "goalChips"].forEach(id =>
-  ok("存在 #" + id, !!byId(id)));
-
-const noteImgs = $$("#moneyWrap img");
-ok("人民币图标已换成真实照片（内联 data URI）",
-   noteImgs.length > 0 && noteImgs.every(i => i.src.indexOf("data:image/jpeg;base64,") === 0),
-   "共 " + noteImgs.length + " 张");
-ok("页面里已无手绘钞票 symbol",
-   html.indexOf('id="bk100"') < 0 && html.indexOf('id="cn100"') < 0 && html.indexOf("#sprite") < 0);
-ok("图鉴容器 #bookGrid 存在", !!byId("bookGrid"));
-
-ok("旧的环形进度条已移除", html.indexOf("ring-wrap") < 0 && html.indexOf("ring-fg") < 0);
-ok("旧的横向对比条已移除", html.indexOf("cmp-bar") < 0 && html.indexOf("cmp-left") < 0);
-ok("旧的「点选金额」实现已彻底移除",
-   html.indexOf("YUAN_OPTS") < 0 && html.indexOf("JIAO_OPTS") < 0 &&
-   html.indexOf("chipInner") < 0 && html.indexOf("buildPicker") < 0 &&
-   html.indexOf('id="chipsYuan"') < 0 && html.indexOf('id="chipsJiao"') < 0);
-
-console.log("\n=== 2. 初始状态 ===");
-eq("初始余额 = 200元", balNum(), "200");
-eq("一打开就是满的 100%（反向逻辑）", byId("tankPct").textContent.trim(), "100%");
-ok("小猪水位已设 transform", /translateY/.test(byId("pigLiquid").style.transform));
-eq("「全部记录」笔数徽标 = 0", badge(), "0");
-
-console.log("\n=== 3. 金额自由输入：任意金额都填得出来 ===");
-click(byId("btnAdd"));
-ok("存钱面板已打开", byId("sheetAdd").classList.contains("open"));
-
-typeAmt("add", 7, 4, 0);                       // 7元4角 —— 老选项里根本没有 4
-eq("填 7元4角 → 预览就是 7元4角", amtOf("addPreview"), "7元4角");
-ok("预览附带「由哪些真钱组成」的教学图排",
-   byId("addPreview").querySelectorAll(".cash-row .it").length > 0);
-
-click(byId("addClear"));
-ok("清空后预览回到空态提示", byId("addPreview").textContent.indexOf("填个数字") >= 0,
-   byId("addPreview").textContent);
-
-setVal("addYuan", "007");
-eq("元输入框去掉多余前导零（007 → 7）", byId("addYuan").value, "7");
-setVal("addYuan", "1a2b3");
-eq("元输入框只留数字（1a2b3 → 123）", byId("addYuan").value, "123");
-setVal("addJiao", "12");
-eq("角输入框超过 9 自动压到 9", byId("addJiao").value, "9");
-setVal("addFen", "9");
-typeAmt("add", 123, 9, 9);
-eq("123元9角9分 预览正确", amtOf("addPreview"), "123元9角9分");
-
-/* 用「怪金额」745分 验证任意组合都能存 */
-click(byId("addClear"));
-typeAmt("add", 7, 4, 5);
-click(byId("btnConfirmAdd"));
-ok("存钱面板已关闭", !byId("sheetAdd").classList.contains("open"));
-eq("余额 200 + 7元4角5分 → 元位 207", balNum(), "207");
-eq("「全部记录」徽标变成 1", badge(), "1");
-
-console.log("\n=== 4. 全部记录清单：能看到所有已登记的物品 ===");
-click(byId("btnHistory"));
-ok("清单已打开", byId("sheetHistory").classList.contains("open"));
-eq("清单里有 1 条记录", rows().length, 1);
-const r0 = rows()[0];
-ok("每条显示「存进去 / 花掉」类型标签", !!r0.querySelector(".kd") && /存进去|花掉/.test(r0.textContent));
-eq("金额显示为 7元4角5分", txt(r0.querySelector(".amt")), "7元4角5分");
-ok("每条显示时间", /🕒/.test(r0.querySelector(".meta").textContent), r0.querySelector(".meta").textContent);
-ok("每条带「由哪些真钱组成」的小图排", r0.querySelectorAll(".cash-row .it").length > 0);
-ok("每条有 ✏️ 修改 与 🗑 删除", !!r0.querySelector(".acts .ed") && !!r0.querySelector(".acts .dl"));
-ok("顶部有总账汇总（共几笔 / 存入 / 花掉 / 还剩）",
-   /共/.test(txt($("#historyBox .hist-sum"))) && /存入/.test(txt($("#historyBox .hist-sum"))) &&
-   /花掉/.test(txt($("#historyBox .hist-sum"))) && /还剩/.test(txt($("#historyBox .hist-sum"))),
-   txt($("#historyBox .hist-sum")));
-closeSheet("sheetHistory");
-
-console.log("\n=== 5. 多笔记录：全部列出、一笔不丢 ===");
-[[3, 0, 0], [12, 5, 0], [100, 0, 1]].forEach(function (a) {   // 再存 3 笔
-  click(byId("btnAdd")); typeAmt("add", a[0], a[1], a[2]); click(byId("btnConfirmAdd"));
-});
-/* 花 2元5角（走两步流程：填金额 → 下一步 → 保存） */
-click(byId("btnBuy"));
-typeAmt("buy", 2, 5, 0);
-eq("买东西预览 = 2元5角", amtOf("sumPreview"), "2元5角");
-click(byId("btnBuyNext"));
-click(byId("btnConfirmBuy"));
-eq("共 5 笔记录（4 存 + 1 花）", badge(), "5");
-click(byId("btnHistory"));
-eq("清单里 5 条一条不少", rows().length, 5);
-const kinds = rows().map(r => txt(r.querySelector(".kd")));
-ok("列表里既有「存进去」也有「花掉」",
-   kinds.indexOf("存进去") >= 0 && kinds.indexOf("花掉") >= 0, kinds.join("/"));
-ok("汇总里的「共 5 笔」正确", /共5笔/.test(txt($("#historyBox .hist-sum"))), txt($("#historyBox .hist-sum")));
-
-/* 分页：花掉的 / 存进去的 */
-const segs = $$("#histSeg button");
-click(segs.find(b => b.dataset.tab === "spend"));
-eq("「花掉的」分页只有 1 条", rows().length, 1);
-click(segs.find(b => b.dataset.tab === "in"));
-eq("「存进去的」分页有 4 条", rows().length, 4);
-click(segs.find(b => b.dataset.tab === "all"));
-eq("切回「全部」有 5 条", rows().length, 5);
-
-console.log("\n=== 6. 改一笔金额（任意金额都能改）===");
-const balBeforeEdit = balNum();
-click(rows()[0].querySelector(".acts .ed"));
-ok("编辑面板已打开", byId("sheetEdit").classList.contains("open"));
-ok("编辑面板标题区分存/花", /改这笔/.test(byId("editTitle").textContent), byId("editTitle").textContent);
-ok("编辑面板回填了原金额（不全为 0）",
-   !!(byId("editYuan").value || byId("editJiao").value || byId("editFen").value),
-   [byId("editYuan").value, byId("editJiao").value, byId("editFen").value].join("/"));
-typeAmt("edit", 9, 9, 0);                       // 改成 9元9角
-eq("改金额后预览 = 9元9角", amtOf("editPreview"), "9元9角");
-click(byId("btnEditSave"));
-ok("编辑面板已关闭", !byId("sheetEdit").classList.contains("open"));
-ok("改完金额余额变了", balNum() !== balBeforeEdit, balBeforeEdit + " → " + balNum());
-
-console.log("\n=== 7. 删一笔 ===");
-click(byId("btnHistory"));
-const nBefore = rows().length;
-const balBeforeDel = balNum();
-win.__confirmAnswer = true;
-click(rows()[rows().length - 1].querySelector(".acts .dl"));
-eq("删除后少一条", rows().length, nBefore - 1);
-ok("删除后余额回滚", balNum() !== balBeforeDel, balBeforeDel + " → " + balNum());
-win.__confirmAnswer = false;
-const nKeep = rows().length;
-click(rows()[0].querySelector(".acts .dl"));
-eq("在 confirm 里选「取消」则不删", rows().length, nKeep);
-win.__confirmAnswer = true;
-closeSheet("sheetHistory");
-
-console.log("\n=== 8. 满度是反向的：一开始 100%，花钱往下掉 ===");
-const pctNow = () => parseFloat(byId("tankPct").textContent);
-const lvNum = () => parseFloat(((byId("pigLiquid").style.transform || "").match(/translateY\(([-\d.]+)px\)/) || [0, "NaN"])[1]);
-
-const hH = () => parseFloat(byId("tankWater").style.height) || 0;
-const h0 = hH();
-click(byId("btnBuy")); typeAmt("buy", 5, 0, 0); click(byId("btnBuyNext")); click(byId("btnConfirmBuy"));
-const h1 = hH();
-ok("买完东西水位下降", h1 < h0, h0 + "% → " + h1 + "%");
-ok("小猪肚子里的水位同步下降", lvNum() > 136 - 96 * h0 / 100 - 0.5,
-   byId("pigLiquid").style.transform);
-
-click(byId("btnAdd")); typeAmt("add", 50, 0, 0); click(byId("btnConfirmAdd"));
-const h2 = hH();
-ok("存钱后水位回升", h2 > h1, h1 + "% → " + h2 + "%");
-
-console.log("\n=== 9. 买东西钱不够时拦截 ===");
-click(byId("btnBuy"));
-typeAmt("buy", 99999, 9, 9);            // 一个肯定超过余额的金额
-ok("填超过余额时预览变红并给出提示",
-   byId("sumPreview").classList.contains("over") && byId("buyOverTip").style.display === "block",
-   byId("buyOverTip").textContent);
-click(byId("btnBuyNext"));
-ok("钱不够时不允许进第二步",
-   byId("buyStepAmt").style.display !== "none", byId("buyStepAmt").style.display);
-typeAmt("buy", 0, 0, 0);
-click(byId("btnBuyNext"));
-ok("金额为 0 时也不允许进第二步", byId("buyStepAmt").style.display !== "none");
-click(byId("btnBuyCancel"));
-
-console.log("\n=== 10. 人民币图鉴 ===");
-click(byId("btnBook"));
-ok("图鉴面板已打开", byId("sheetBook").classList.contains("open"));
-eq("图鉴卡片数 = 11", byId("bookGrid").querySelectorAll(".bk-card").length, 11);
-const bookImgs = $$("#bookGrid .bk-card img");
-ok("每张图鉴卡都带真人民币照片",
-   $$("#bookGrid .bk-card").length > 0 &&
-   $$("#bookGrid .bk-card").every(c => !!c.querySelector("img")) &&
-   bookImgs.length > 0 &&
-   bookImgs.every(i => String(i.getAttribute("src")).indexOf("data:image/jpeg;base64,") === 0),
-   "卡片 " + $$("#bookGrid .bk-card").length + " / 图 " + bookImgs.length +
-   " / 首图 " + (bookImgs[0] ? String(bookImgs[0].getAttribute("src")).slice(0, 32) : "无"));
-closeSheet("sheetBook");
-
-console.log("\n=== 11. 持久化 ===");
-const saved = win.localStorage.getItem("kid_piggy_bank_v3");
-ok("已写入 localStorage", !!saved && saved.length > 10);
-const parsed = JSON.parse(saved || "{}");
-ok("存档含 items / deposits / initial",
-   parsed.items !== undefined && Array.isArray(parsed.items) && Array.isArray(parsed.deposits) &&
-   parsed.initial !== undefined,
-   "items=" + (parsed.items || []).length + " deposits=" + (parsed.deposits || []).length);
-ok("存进去的怪金额 745 分被完整保存（无浮点误差）",
-   parsed.deposits.some(x => x.price === 745) || parsed.deposits.every(x => Number.isInteger(x.price)),
-   JSON.stringify((parsed.deposits || []).map(x => x.price)));
-
-console.log("\n=== 12. 运行时错误 ===");
-ok("无运行时错误", errors.length === 0, errors.join(" | ").slice(0, 300));
-
-console.log("\n=== 13. 换个干净的存档：容量决定满度 ===");
-{
-  const dom2 = new JSDOM(html, {
-    runScripts: "dangerously", pretendToBeVisual: true, url: "https://piggy.local/",
+/* ---------------------------------------------------------------
+   建一个独立实例（互不干扰的 localStorage），返回一堆便捷操作
+   --------------------------------------------------------------- */
+function boot(seed) {
+  const errors = [];
+  const dom = new JSDOM(html, {
+    runScripts: "dangerously",
+    pretendToBeVisual: true,
+    url: "https://piggy.local/",          // 必须：否则 localStorage 抛 DOMException
     beforeParse(win) {
       win.HTMLCanvasElement.prototype.getContext = () => null;
-      win.confirm = () => true;
-      win.matchMedia = () => ({ matches: false, addEventListener() {}, removeEventListener() {} });
+      win.confirm = () => win.__confirmAnswer !== false;
+      win.alert = () => {};
+      win.matchMedia = () => ({ matches: false, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {} });
+      win.addEventListener("error", e => errors.push(String(e.error || e.message)));
+      if (seed) { try { win.localStorage.setItem("kid_piggy_bank_v3", seed); } catch (e) {} }
     }
   });
-  const w2 = dom2.window, d2 = w2.document;
-  const b2 = (id) => d2.getElementById(id);
-  const cl2 = (el) => el.dispatchEvent(new w2.MouseEvent("click", { bubbles: true }));
-  const ty2 = (p, y, j, f) => {
-    ["Yuan", "Jiao", "Fen"].forEach((k, i) => {
-      const el = b2(p + k); el.value = String([y, j, f][i] === 0 ? "" : [y, j, f][i]);
-      el.dispatchEvent(new w2.Event("input", { bubbles: true }));
-    });
+  const win = dom.window, doc = win.document;
+  const byId = (id) => doc.getElementById(id);
+  const $ = (s) => doc.querySelector(s);
+  const $$ = (s) => Array.from(doc.querySelectorAll(s));
+  const click = (el) => {
+    if (!el) throw new Error("click 目标不存在");
+    el.dispatchEvent(new win.MouseEvent("click", { bubbles: true }));
   };
-  const hgt = () => parseFloat(b2("tankWater").style.height) || 0;
+  const setVal = (id, v) => {
+    const el = byId(id);
+    el.value = v === 0 || v === "" ? "" : String(v);
+    el.dispatchEvent(new win.Event("input", { bubbles: true }));
+  };
+  const typeAmt = (prefix, y, j, f) => { setVal(prefix + "Yuan", y); setVal(prefix + "Jiao", j); setVal(prefix + "Fen", f); };
+  const balNum = () => byId("balNum").textContent.trim();
+  const badge  = () => byId("histCount").textContent.trim();
+  const rows   = () => $$("#historyBox .hrow");
 
-  eq("干净存档初始水位 = 100%", b2("tankPct").textContent.trim(), "100%");
-  ok("水柱高度 = 100%", Math.abs(hgt() - 100) < 0.01, String(hgt()));
-  /* 花掉 50 元 → 只装了 200 元，剩 150 元 = 75% */
-  cl2(b2("btnBuy")); ty2("buy", 50, 0, 0); cl2(b2("btnBuyNext")); cl2(b2("btnConfirmBuy"));
-  ok("买 50 元后水位 ≈75%", Math.abs(hgt() - 75) < 0.6, String(hgt()));
-  eq("余额 = 150 元", b2("balNum").textContent.trim(), "150");
-  /* 把容量改成 400 元 → 剩下的 150 元只占 37.5% */
-  cl2(b2("btnGoal")); b2("goalInput").value = "400"; cl2(b2("btnGoalSet"));
-  ok("容量改 400 元后水位 ≈37.5%", Math.abs(hgt() - 37.5) < 0.6, String(hgt()));
-  /* 再买 30 元 → 120/400 = 30% */
-  cl2(b2("btnBuy")); ty2("buy", 30, 0, 0); cl2(b2("btnBuyNext")); cl2(b2("btnConfirmBuy"));
-  ok("再买 30 元后水位 ≈30%", Math.abs(hgt() - 30) < 0.6, String(hgt()));
-  dom2.window.close();
+  /* 小猪肚子的水位百分比：从 #pigLiquid 的 translateY 反推
+     Y = 136 - 96*pct/100 + 5  →  pct = (141 - Y) / 96 * 100 */
+  const PIGPCT = () => {
+    const m = /translateY\(([-\d.]+)px\)/.exec(byId("pigLiquid").style.transform || "");
+    if (!m) return -1;
+    return (141 - parseFloat(m[1])) / 96 * 100;
+  };
+
+  const buy = (y, j, f) => {
+    click(byId("btnBuy"));
+    typeAmt("buy", y, j, f);
+    click(byId("btnBuyNext"));
+    click(byId("btnConfirmBuy"));
+  };
+  const saved = () => JSON.parse(win.localStorage.getItem("kid_piggy_bank_v3") || "{}");
+  return { dom, win, doc, byId, $, $$, click, setVal, typeAmt, balNum, badge, rows, PIGPCT, buy, saved, errors,
+           close: () => win.close() };
 }
 
-console.log("\n=== 14. 老存档迁移：goal 当年是「存钱目标」，读进来要按满度重算 ===");
+console.log("=== 1. 结构化：该有的在，该删的没了 ===");
 {
-  /* 版本 1 的存档：goal=500元 是「存钱目标」，不是满度。
-     如果直接沿用，178 元的余额会显示成 178/500=35.6%；重算成 initial=200元 后应该是 89%。 */
-  const legacy = JSON.stringify({
-    initial: 20000, added: 0, goal: 50000,
-    deposits: [{ id: "d1", price: 1300, img: "", time: "09/25 10:00" }],
-    items: [{ id: "i1", price: 3500, img: "", time: "09/25 15:00", kind: "spend" }]
+  const t = boot();
+  ["piggyBox","pigLiquid","balNum","balUnit","wlSub","periodTag","histCount","btnHistory",
+   "btnBook","btnBuy","btnNew","sheetBuy","sheetHistory","sheetBook","sheetEdit","zoom",
+   "zoomImg","zoomTitle","zoomCnt","zoomPrev","zoomNext","zoomIn","zoomOut","zoomClose"].forEach(id => {
+    ok("存在 #" + id, !!t.byId(id));
   });
-  const dom3 = new JSDOM(html, {
-    runScripts: "dangerously", pretendToBeVisual: true, url: "https://piggy.local/",
-    beforeParse(w) {
-      w.HTMLCanvasElement.prototype.getContext = () => null;
-      w.confirm = () => true;
-      w.matchMedia = () => ({ matches: false, addEventListener() {}, removeEventListener() {} });
-      /* beforeParse 早于任何脚本执行，正好模拟「老存档已经在浏览器里」 */
-      try { w.localStorage.setItem("kid_piggy_bank_v3", legacy); } catch (e) {}
-    }
+  ["tankWater","tankPct","btnAdd","sheetAdd","addYuan","sheetGoal","goalChips","btnGoal"].forEach(id => {
+    ok("已删除 #" + id, !t.byId(id));
   });
-  const b3 = (id) => dom3.window.document.getElementById(id);
-  const hgt3 = () => parseFloat(b3("tankWater").style.height) || 0;
+  ok("页面里已无 .tank 进度条", !t.$(".tank"));
+  ok("页面里已无「存钱」入口文案", html.indexOf(">存钱<") < 0 && html.indexOf("💰 存入多少") < 0);
+  ok("脚本里已无存钱金额面板绑定", html.indexOf('"addYuan"') < 0 && html.indexOf("btnConfirmAdd") < 0);
+  t.close();
+}
 
-  eq("老存档的余额照旧 = 178 元", b3("balNum").textContent.trim(), "178");
-  ok("满度按一开始的基金重算 → 水位 ≈89%", Math.abs(hgt3() - 89) < 0.6, String(hgt3()));
-  ok("老存档里的记录没被丢掉（1 存 + 1 花）",
-     byId("histCount") && dom3.window.document.getElementById("histCount").textContent === "2",
-     dom3.window.document.getElementById("histCount").textContent);
-  const saved3 = JSON.parse(dom3.window.localStorage.getItem("kid_piggy_bank_v3") || "{}");
-  eq("重新存盘后带上语义版本 sem = 2", saved3.sem, 2);
-  dom3.window.close();
+console.log("\n=== 2. 真人民币照片（显示版） ===");
+{
+  const t = boot();
+  const imgs = t.$$("#moneyWrap img");
+  ok("钱排里的图都是内联真照片", imgs.length > 0 && imgs.every(i => i.src.indexOf("data:image/jpeg;base64,") === 0),
+     "共 " + imgs.length + " 张");
+  ok("每张图都带 data-k（点开能放大）", imgs.every(i => !!i.dataset.k));
+  ok("不再有手绘钞票 symbol", html.indexOf('id="bk100"') < 0 && html.indexOf("#sprite") < 0);
+  t.click(t.byId("btnBook"));
+  const cards = t.$$("#bookGrid .bk-card");
+  eq("图鉴卡片数 = 11", cards.length, 11);
+  const bImgs = t.$$("#bookGrid img");
+  ok("图鉴每张都有 data-k 且是真照片",
+     bImgs.length === 11 && bImgs.every(i => i.dataset.k && i.src.indexOf("data:image/jpeg;base64,") === 0));
+  ok("图鉴里都是内联图（不依赖外链）", bImgs.every(i => i.getAttribute("src").length > 500));
+  t.close();
+}
+
+console.log("\n=== 3. 高清放大版：分辨率必须高于显示版 ===");
+{
+  ok("文件里写着显示版图片表", !!RMB && Object.keys(RMB).length === 11,
+     RMB ? Object.keys(RMB).length + " 张" : "找不到 var RMB");
+  ok("文件里写着高清版图片表", !!RMB_HD && Object.keys(RMB_HD).length === 11,
+     RMB_HD ? Object.keys(RMB_HD).length + " 张" : "找不到 var RMB_HD");
+  const keys = Object.keys(RMB_HD || {});
+  const smaller = keys.filter(k => !(RMB_HD[k].length > (RMB[k] || "").length));
+  ok("每个面额的高清版都比显示版长（分辨率更高）", smaller.length === 0, "偏小的: " + smaller.join(","));
+  const same = keys.filter(k => RMB_HD[k] === RMB[k]);
+  ok("高清版和显示版不是同一张图", same.length === 0, "一样的: " + same.join(","));
+  const totalHD = keys.reduce((s, k) => s + RMB_HD[k].length, 0);
+  const totalD = Object.keys(RMB || {}).reduce((s, k) => s + RMB[k].length, 0);
+  ok("高清版总量在 400KB~1.2MB 之间（够清晰又不至于太大）",
+     totalHD > 400 * 1024 && totalHD < 1200 * 1024, (totalHD / 1024).toFixed(0) + " KB");
+  ok("高清版占了整个文件的一小部分，单文件仍然开得动",
+     totalHD / html.length < 0.9, ((totalHD / html.length) * 100).toFixed(0) + "%");
+  console.log("       └ 显示版 " + (totalD / 1024).toFixed(0) + " KB → 高清版 " + (totalHD / 1024).toFixed(0) + " KB");
+}
+
+console.log("\n=== 4. 点开人民币 → 全屏放大 ===");
+{
+  const t = boot();
+  const firstImg = t.$("#moneyWrap img");
+  const k = firstImg.dataset.k;
+  t.click(firstImg);
+  ok("放大层已打开", t.byId("zoom").classList.contains("open"));
+  const hdSrc = t.byId("zoomImg").getAttribute("src");
+  ok("用的是高清版大图（且和显示版不是同一张）",
+     hdSrc === RMB_HD[k] && hdSrc !== firstImg.getAttribute("src"), k);
+  ok("标题写清是什么钱", /元/.test(t.byId("zoomTitle").textContent.trim()), t.byId("zoomTitle").textContent);
+  eq("计数从第 1 张开始", t.byId("zoomCnt").textContent.trim(), "1 / 11");
+
+  t.click(t.byId("zoomNext"));
+  eq("下一张 → 2 / 11", t.byId("zoomCnt").textContent.trim(), "2 / 11");
+  t.click(t.byId("zoomPrev"));
+  t.click(t.byId("zoomPrev"));
+  eq("上一张可以循环到最后一张", t.byId("zoomCnt").textContent.trim(), "11 / 11");
+
+  t.click(t.byId("zoomIn"));
+  ok("点「＋」后图片被放大", /scale\(1\.5\)/.test(t.byId("zoomImg").style.transform), t.byId("zoomImg").style.transform);
+  t.click(t.byId("zoomOut"));
+  ok("点「－」能缩回 1 倍并居中", /scale\(1\)/.test(t.byId("zoomImg").style.transform), t.byId("zoomImg").style.transform);
+  t.click(t.byId("zoomClose"));
+  ok("关闭后放大层收起", !t.byId("zoom").classList.contains("open"));
+
+  t.click(t.byId("btnBook"));
+  t.click(t.$("#bookGrid img"));
+  ok("图鉴里的图也能点开放大", t.byId("zoom").classList.contains("open"));
+  ok("点开后标题是这一张的名字", t.byId("zoomTitle").textContent.trim().length > 0, t.byId("zoomTitle").textContent);
+  t.close();
+}
+
+console.log("\n=== 5. 反向水位：一打开是满的，花掉往下降 ===");
+{
+  const t = boot();
+  eq("初始余额 = 200 元", t.balNum(), "200");
+  ok("小猪一开始是满的（100%）", Math.abs(t.PIGPCT() - 100) < 0.01, String(t.PIGPCT()));
+  t.buy(50, 0, 0);
+  eq("花 50 元后余额 = 150", t.balNum(), "150");
+  ok("水位掉到 75%", Math.abs(t.PIGPCT() - 75) < 0.6, String(t.PIGPCT()));
+  t.buy(150, 0, 0);
+  eq("再花 150 元余额 = 0", t.balNum(), "0");
+  ok("水位到 0%（一滴不剩）", Math.abs(t.PIGPCT()) < 0.01, String(t.PIGPCT()));
+  eq("归零时单位显示「元」不是「分」", t.byId("balUnit").textContent.trim(), "元");
+  t.close();
+}
+
+console.log("\n=== 6. 买东西：金额必填、花超了拦住 ===");
+{
+  const t = boot();
+  t.buy(0, 0, 0);
+  eq("金额空着买不成", t.badge(), "0");
+  t.buy(201, 0, 0);
+  eq("余额不足买不成", t.badge(), "0");
+  eq("余额还是 200 元", t.balNum(), "200");
+  t.buy(200, 0, 0);
+  eq("正好花光可以", t.badge(), "1");
+  eq("余额 = 0 元", t.balNum(), "0");
+  t.close();
+}
+
+console.log("\n=== 7. 金额自由输入：元 / 角 / 分 任意组合 ===");
+{
+  const t = boot();
+  t.buy(12, 3, 5);
+  eq("12元3角5分 → 还剩 187 元", t.balNum(), "187");
+  eq("单位「元」", t.byId("balUnit").textContent.trim(), "元");
+  t.buy(0, 0, 5);
+  eq("再花 5 分 → 还剩 187 元（187.30）", t.balNum(), "187");
+  t.close();
+}
+
+console.log("\n=== 8. 记账本：改 / 删 ===");
+{
+  const t = boot();
+  t.buy(30, 0, 0);
+  t.buy(20, 0, 0);
+  eq("记录数 = 2", t.badge(), "2");
+  t.click(t.byId("btnHistory"));
+  eq("清单里有 2 行", t.rows().length, 2);
+  ok("汇总里写着还剩多少", /还剩/.test(t.byId("historyBox").textContent));
+
+  t.win.confirm = () => true;
+  t.click(t.rows()[0].querySelector(".dl"));
+  eq("删掉最新一条（20元）→ 余额 170", t.balNum(), "170");
+  eq("记录数 = 1", t.badge(), "1");
+
+  t.click(t.rows()[0].querySelector(".ed"));
+  ok("打开修改面板", t.byId("sheetEdit").classList.contains("open"));
+  t.typeAmt("edit", 5, 0, 0);
+  t.click(t.byId("btnEditSave"));
+  eq("把 30 元改成 5 元 → 余额 195", t.balNum(), "195");
+  t.close();
+}
+
+console.log("\n=== 9. 新的一期：本期归档、期数 +1、重新 200 元 ===");
+{
+  const t = boot();
+  eq("初始是第 1 期", t.byId("periodTag").textContent.trim(), "第 1 期");
+  t.buy(40, 0, 0);
+  t.buy(10, 0, 0);
+  eq("花掉 50 元后余额 150", t.balNum(), "150");
+  eq("记录 2 笔", t.badge(), "2");
+
+  t.win.confirm = () => true;
+  t.click(t.byId("btnNew"));
+  eq("期数变成第 2 期", t.byId("periodTag").textContent.trim(), "第 2 期");
+  eq("余额回到 200 元", t.balNum(), "200");
+  ok("小猪重新满上（100%）", Math.abs(t.PIGPCT() - 100) < 0.01, String(t.PIGPCT()));
+  eq("本期记录清空", t.badge(), "0");
+
+  const s = t.saved();
+  eq("存档里期数 = 2", s.period, 2);
+  eq("往期归档 1 期", s.periods.length, 1);
+  eq("归档的那期保存了 2 笔", s.periods[0].items.length, 2);
+
+  t.click(t.byId("btnHistory"));
+  const pastBtn = t.$$("#histSeg button").find(b => b.dataset.tab === "past");
+  ok("有「往期」分页", !!pastBtn);
+  t.click(pastBtn);
+  ok("往期里能看到第 1 期", /第 1 期/.test(t.byId("historyBox").textContent), t.byId("historyBox").textContent.slice(0, 80));
+  ok("往期汇总写着累计花掉 50 元", /50元/.test(t.byId("historyBox").textContent));
+  const card = t.$("#historyBox .pcard");
+  ok("往期卡片默认收起", card && !card.classList.contains("open"));
+  t.click(card.querySelector(".ph"));
+  ok("点一下能展开明细", card.classList.contains("open"));
+  eq("明细里 2 行", t.$$("#historyBox .prow").length, 2);
+
+  // 空的一期不重复归档
+  t.click(card.querySelector(".ph"));
+  t.click(t.byId("btnNew"));
+  eq("第三期", t.byId("periodTag").textContent.trim(), "第 3 期");
+  eq("空的这一期不进往期（仍是 1 期）", t.saved().periods.length, 1);
+  t.close();
+}
+
+console.log("\n=== 10. 取消「新的一期」不丢数据 ===");
+{
+  const t = boot();
+  t.buy(25, 0, 0);
+  t.win.confirm = () => false;
+  t.click(t.byId("btnNew"));
+  eq("取消后还在第 1 期", t.byId("periodTag").textContent.trim(), "第 1 期");
+  eq("余额不变", t.balNum(), "175");
+  eq("记录还在", t.badge(), "1");
+  t.close();
+}
+
+console.log("\n=== 11. 持久化：刷新后还在 ===");
+{
+  const t = boot();
+  t.buy(66, 0, 0);
+  const dump = t.win.localStorage.getItem("kid_piggy_bank_v3");
+  const t2 = boot(dump);
+  eq("重新打开余额还是 134", t2.balNum(), "134");
+  eq("语义版本 sem = 3", t2.saved().sem, 3);
+  t.close(); t2.close();
+}
+
+console.log("\n=== 12. 老存档迁移（sem 1 / sem 2 → 3） ===");
+{
+  // sem 1：当年 goal 是「存钱目标」，还带着一笔存钱记录
+  const legacy = JSON.stringify({
+    sem: 1, initial: 20000, added: 0, goal: 50000,
+    deposits: [{ id: "d1", price: 5000, img: "", time: "09/20 10:00" }],
+    items: [{ id: "i1", price: 3500, img: "", time: "09/20 15:00", kind: "spend" }]
+  });
+  const t = boot(legacy);
+  eq("旧「存钱」的钱折进基金：200+50-35 = 215 元", t.balNum(), "215");
+  // 折进来之后基金 = 200+50 = 250 元，满度也跟着变成 250，花掉的 35 元照扣 → 215/250 = 86%
+  ok("满度 = 折进后的基金 250 元，水位 = 215/250 = 86%",
+     Math.abs(t.PIGPCT() - 86) < 0.6, String(t.PIGPCT()));
+  eq("存档里的满度就是基金", t.saved().goal, 25000);
+  eq("旧的存钱记录不再算本期记录", t.badge(), "1");
+  eq("迁移后语义版本 = 3", t.saved().sem, 3);
+  ok("存档里不再写 deposits", t.saved().deposits === undefined, JSON.stringify(t.saved().deposits));
+  t.close();
+
+  // sem 2：余额比 200 少一丁点 → 水位不能超过 100%
+  const legacy2 = JSON.stringify({
+    sem: 2, initial: 20000, added: 0, goal: 20000, deposits: [],
+    items: [{ id: "i1", price: 100, img: "", time: "09/20 15:00", kind: "spend" }]
+  });
+  const t2 = boot(legacy2);
+  eq("sem2 的存档余额 = 199 元", t2.balNum(), "199");
+  ok("水位 ≈99.5%", Math.abs(t2.PIGPCT() - 99.5) < 0.6, String(t2.PIGPCT()));
+  t2.close();
+}
+
+console.log("\n=== 13. 运行期没有 JS 报错 / 空引用 ===");
+{
+  const t = boot();
+  t.buy(10, 0, 0);
+  t.click(t.byId("btnHistory"));
+  t.click(t.byId("btnBook"));
+  t.click(t.byId("btnNew"));
+  t.click(t.$("#moneyWrap img"));
+  t.click(t.byId("zoomClose"));
+  t.click(t.byId("piggyBox"));
+  ok("全程没有未捕获错误", t.errors.length === 0, t.errors.slice(0, 3).join(" | "));
+  t.close();
 }
 
 console.log("\n──────────────────────────────");
