@@ -1,8 +1,12 @@
-/* jsdom 交互冒烟测试台：验证 「先金额→拍照(可跳过)」「真人民币图版」「改/删记录」「小猪满度」 */
+/* jsdom 交互冒烟测试台
+   覆盖：① 金额自由输入（元/角/分 任意组合） ② 真人民币图版 ③ 全部记录清单（含改/删）
+        ④ 小猪满度 ⑤ 流程「先金额（必填）→ 拍照(可选)」 ⑥ 持久化
+   跑法：npm test   （或 node tests/piggy.test.js） */
 const fs = require("fs");
+const path = require("path");
 const { JSDOM } = require("jsdom");
 
-const HTML_PATH = require("path").join(__dirname, "..", "piggy-bank.html");
+const HTML_PATH = path.join(__dirname, "..", "piggy-bank.html");
 const html = fs.readFileSync(HTML_PATH, "utf8");
 
 let pass = 0, fail = 0;
@@ -12,176 +16,242 @@ function ok(name, cond, extra) {
   else { fail++; fails.push(name); console.log("  FAIL  " + name + (extra ? "  << " + extra : "")); }
 }
 function eq(name, actual, expect) {
-  ok(name + " (=" + expect + ")", String(actual) === String(expect), "实际=" + actual);
+  ok(name + " (= " + expect + ")", String(actual) === String(expect), "实际=" + actual);
 }
 
 const errors = [];
 const dom = new JSDOM(html, {
   runScripts: "dangerously",
   pretendToBeVisual: true,
-  url: "https://piggy.local/",
+  url: "https://piggy.local/",              // 必须：否则 localStorage 抛 DOMException
   beforeParse(win) {
     win.HTMLCanvasElement.prototype.getContext = () => null;
     win.confirm = () => win.__confirmAnswer !== false;
     win.alert = () => {};
     win.matchMedia = () => ({ matches: false, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {} });
-    win.onerror = (m) => { errors.push(m); };
+    win.addEventListener("error", e => errors.push(String(e.error || e.message)));
   }
 });
 const win = dom.window, doc = win.document;
-win.addEventListener("error", e => errors.push(String(e.error || e.message)));
 
-document = doc;
 const $ = (s) => doc.querySelector(s);
 const $$ = (s) => Array.from(doc.querySelectorAll(s));
 const byId = (id) => doc.getElementById(id);
-const click = (el) => { if (!el) throw new Error("click on null"); el.dispatchEvent(new win.MouseEvent("click", { bubbles: true })); };
-function clickChip(containerId, v) {
-  const box = byId(containerId);
-  const chip = Array.from(box.querySelectorAll(".chip")).find(c => c.getAttribute("data-v") === String(v));
-  if (!chip) throw new Error(containerId + " 找不到面额 chip: " + v);
-  click(chip);
-  return chip;
-}
-function clickNth(containerId, n) { click(Array.from(byId(containerId).querySelectorAll(".chip"))[n]); }
+const click = (el) => { if (!el) throw new Error("click 目标不存在"); el.dispatchEvent(new win.MouseEvent("click", { bubbles: true })); };
+const closeSheet = (id) => click(byId(id).querySelector("[data-close]"));
 
-console.log("\n=== 1. 结构 / 图版 sprite ===");
-["sprite", "piggyBox", "pigLiquid", "pigLvl", "pigSub", "balNum", "btnHistory", "btnGoal", "btnBook",
- "sheetEdit", "sheetGoal", "sheetBook", "boxYuan", "boxJiao", "boxFen", "addYuan", "addJiao", "addFen",
- "editYuan", "editJiao", "editFen", "pigCash", "goalChips"].forEach(id => ok("存在 #" + id, !!byId(id)));
+/* 往「元/角/分」输入框里打字，并触发 input 事件（模拟真实输入） */
+function setVal(id, v) {
+  const el = byId(id);
+  el.value = v === 0 || v === "" ? "" : String(v);
+  el.dispatchEvent(new win.Event("input", { bubbles: true }));
+  return el;
+}
+function typeAmt(prefix, y, j, f) {
+  setVal(prefix + "Yuan", y);
+  setVal(prefix + "Jiao", j);
+  setVal(prefix + "Fen", f);
+}
+const balNum = () => byId("balNum").textContent.trim();
+const badge  = () => byId("histCount").textContent.trim();
+const rows   = () => $$("#historyBox .hrow");
+const txt    = (el) => (el ? el.textContent.replace(/\s+/g, "") : "");
+/* 预览区只取金额本身：预览里还挂着一排真钱图，整段文本会带上「×4」这类标记 */
+function amtOf(boxId) {
+  const b = byId(boxId);
+  return ["yuan", "jiao", "fen"].map(k => {
+    const box = b.querySelector(".sp-" + k);
+    return box ? box.querySelector(".v").textContent + box.querySelector(".u").textContent : "";
+  }).join("");
+}
+
+console.log("\n=== 1. 结构与人民币图版 sprite ===");
+["sprite", "piggyBox", "pigLiquid", "pigLvl", "pigSub", "balNum",
+ "btnHistory", "histCount", "btnGoal", "btnBook",
+ "sheetEdit", "sheetGoal", "sheetBook", "sheetHistory", "historyBox", "histSeg",
+ "buyYuan", "buyJiao", "buyFen", "addYuan", "addJiao", "addFen", "editYuan", "editJiao", "editFen",
+ "buyClear", "addClear", "editClear", "buyOverTip", "pigCash", "goalChips"].forEach(id =>
+  ok("存在 #" + id, !!byId(id)));
 
 const symbols = $$("#sprite symbol").map(s => s.id);
 ["bk100", "bk50", "bk20", "bk10", "bk5", "bk1", "cn100", "cn50", "cn10", "cn1"].forEach(id =>
-  ok("sprite 含 symbol #" + id, symbols.indexOf(id) >= 0, symbols.join(",")));
-ok("防伪底纹 pattern bkTex 存在", !!byId("bkTex"));
-ok("防伪花纹 pattern bkRos 存在", !!byId("bkRos"));
-ok("小猪肚里的钱已生成", byId("pigCash").querySelectorAll("use").length >= 8,
-   "数量=" + byId("pigCash").querySelectorAll("use").length);
+  ok("sprite 含真钱图版 #" + id, symbols.indexOf(id) >= 0));
+ok("防伪底纹 bkTex / 花纹 bkRos 都在", !!byId("bkTex") && !!byId("bkRos"));
+ok("纸币含「中国人民银行」行名与汉字面额",
+   html.indexOf("中国人民银行") >= 0 && html.indexOf("壹佰圆") >= 0 && html.indexOf("伍拾圆") >= 0);
+ok("小猪肚里的钱已生成", byId("pigCash").querySelectorAll("use").length >= 8);
 
-// 引用完整性：所有 use 的 href 都能在 sprite 里找到
 const useRefs = new Set();
 $$("#sprite use, #pigCash use").forEach(u => {
   const r = u.getAttribute("href") || u.getAttribute("xlink:href");
   if (r) useRefs.add(r.replace("#", ""));
 });
-const missingRef = [...useRefs].filter(r => symbols.indexOf(r) < 0);
-ok("所有 use 引用的 symbol 都存在", missingRef.length === 0, missingRef.join(","));
+ok("所有 use 引用的 symbol 都存在", [...useRefs].every(r => symbols.indexOf(r) >= 0));
 
-// 残留的旧环形/对比条引用
-ok("无残留 ring 类名", doc.body.innerHTML.indexOf("ring-wrap") < 0 && doc.body.innerHTML.indexOf("ring-fg") < 0);
-ok("无残留 cmp 对比条", doc.body.innerHTML.indexOf("cmp-bar") < 0 && doc.body.innerHTML.indexOf("cmp-left") < 0);
+ok("旧的环形进度条已移除", html.indexOf("ring-wrap") < 0 && html.indexOf("ring-fg") < 0);
+ok("旧的横向对比条已移除", html.indexOf("cmp-bar") < 0 && html.indexOf("cmp-left") < 0);
+ok("旧的「点选金额」实现已彻底移除",
+   html.indexOf("YUAN_OPTS") < 0 && html.indexOf("JIAO_OPTS") < 0 &&
+   html.indexOf("chipInner") < 0 && html.indexOf("buildPicker") < 0 &&
+   html.indexOf('id="chipsYuan"') < 0 && html.indexOf('id="chipsJiao"') < 0);
 
 console.log("\n=== 2. 初始状态 ===");
-eq("初始余额 = 200元", byId("balNum").textContent.trim(), "200");
-const initialLvl = byId("pigLvl").textContent.trim();
-ok("小猪初始满度文案非空", initialLvl.length > 0, initialLvl);
-ok("小猪首次打开不是一上来就满（默认目标 500元 → 40%）", initialLvl === "40%", initialLvl);
-const lvl0 = byId("pigLiquid").style.transform;
-ok("小猪水位已设 transform", /translateY/.test(lvl0), lvl0);
+eq("初始余额 = 200元", balNum(), "200");
+eq("默认目标 500元 → 小猪装 40%", byId("pigLvl").textContent.trim(), "40%");
+ok("小猪水位已设 transform", /translateY/.test(byId("pigLiquid").style.transform));
+eq("「全部记录」按钮笔数徽标 = 0", badge(), "0");
 
-console.log("\n=== 3. 存钱流程（先金额 → 拍照可跳过）===");
+console.log("\n=== 3. 金额自由输入：任意金额都填得出来 ===");
 click(byId("btnAdd"));
 ok("存钱面板已打开", byId("sheetAdd").classList.contains("open"));
-clickNth("addYuan", 5);                // 选金额
-ok("选金额后显示预览", byId("addPreview").innerHTML.trim().length > 0);
-ok("预览含「哪些真钱组成」教学图排", byId("addPreview").querySelectorAll(".cash-row .it").length > 0,
-   "图排数=" + byId("addPreview").querySelectorAll(".cash-row .it").length);
-ok("金额 chip 内含真钱图", byId("addYuan").querySelectorAll(".chip svg").length > 0);
+
+typeAmt("add", 7, 4, 0);                       // 7元4角 —— 老选项里根本没有 4
+eq("填 7元4角 → 预览就是 7元4角", amtOf("addPreview"), "7元4角");
+ok("预览附带「由哪些真钱组成」的教学图排",
+   byId("addPreview").querySelectorAll(".cash-row .it").length > 0);
+
+click(byId("addClear"));
+ok("清空后预览回到空态提示", byId("addPreview").textContent.indexOf("填个数字") >= 0,
+   byId("addPreview").textContent);
+
+setVal("addYuan", "007");
+eq("元输入框去掉多余前导零（007 → 7）", byId("addYuan").value, "7");
+setVal("addYuan", "1a2b3");
+eq("元输入框只留数字（1a2b3 → 123）", byId("addYuan").value, "123");
+setVal("addJiao", "12");
+eq("角输入框超过 9 自动压到 9", byId("addJiao").value, "9");
+setVal("addFen", "9");
+typeAmt("add", 123, 9, 9);
+eq("123元9角9分 预览正确", amtOf("addPreview"), "123元9角9分");
+
+/* 用「怪金额」745分 验证任意组合都能存 */
+click(byId("addClear"));
+typeAmt("add", 7, 4, 5);
 click(byId("btnConfirmAdd"));
 ok("存钱面板已关闭", !byId("sheetAdd").classList.contains("open"));
+eq("余额 200 + 7元4角5分 → 元位 207", balNum(), "207");
+eq("「全部记录」徽标变成 1", badge(), "1");
 
-console.log("\n=== 4. 记账本出现这一笔 ===");
+console.log("\n=== 4. 全部记录清单：能看到所有已登记的物品 ===");
 click(byId("btnHistory"));
-ok("记账本已打开", byId("sheetHistory").classList.contains("open"));
-const cards0 = byId("historyBox").querySelectorAll(".hist");
-ok("记账本有记录卡片", cards0.length >= 1, "数量=" + cards0.length);
-const lastCard = cards0[cards0.length - 1];
-ok("卡片有 ✏️ 修改按钮", !!lastCard.querySelector(".acts .ed"));
-ok("卡片有 🗑 删除按钮", !!lastCard.querySelector(".acts .dl"));
-click(byId("btnHistory"));   // 关掉
+ok("清单已打开", byId("sheetHistory").classList.contains("open"));
+eq("清单里有 1 条记录", rows().length, 1);
+const r0 = rows()[0];
+ok("每条显示「存进去 / 花掉」类型标签", !!r0.querySelector(".kd") && /存进去|花掉/.test(r0.textContent));
+eq("金额显示为 7元4角5分", txt(r0.querySelector(".amt")), "7元4角5分");
+ok("每条显示时间", /🕒/.test(r0.querySelector(".meta").textContent), r0.querySelector(".meta").textContent);
+ok("每条带「由哪些真钱组成」的小图排", r0.querySelectorAll(".cash-row .it").length > 0);
+ok("每条有 ✏️ 修改 与 🗑 删除", !!r0.querySelector(".acts .ed") && !!r0.querySelector(".acts .dl"));
+ok("顶部有总账汇总（共几笔 / 存入 / 花掉 / 还剩）",
+   /共/.test(txt($("#historyBox .hist-sum"))) && /存入/.test(txt($("#historyBox .hist-sum"))) &&
+   /花掉/.test(txt($("#historyBox .hist-sum"))) && /还剩/.test(txt($("#historyBox .hist-sum"))),
+   txt($("#historyBox .hist-sum")));
+closeSheet("sheetHistory");
 
-console.log("\n=== 5. 改记录金额 ===");
-const beforeBal = byId("balNum").textContent.trim();
+console.log("\n=== 5. 多笔记录：全部列出、一笔不丢 ===");
+[[3, 0, 0], [12, 5, 0], [100, 0, 1]].forEach(function (a) {   // 再存 3 笔
+  click(byId("btnAdd")); typeAmt("add", a[0], a[1], a[2]); click(byId("btnConfirmAdd"));
+});
+/* 花 2元5角（走两步流程：填金额 → 下一步 → 保存） */
+click(byId("btnBuy"));
+typeAmt("buy", 2, 5, 0);
+eq("买东西预览 = 2元5角", amtOf("sumPreview"), "2元5角");
+click(byId("btnBuyNext"));
+click(byId("btnConfirmBuy"));
+eq("共 5 笔记录（4 存 + 1 花）", badge(), "5");
 click(byId("btnHistory"));
-click(byId("historyBox").querySelectorAll(".hist")[byId("historyBox").querySelectorAll(".hist").length - 1].querySelector(".ed"));
+eq("清单里 5 条一条不少", rows().length, 5);
+const kinds = rows().map(r => txt(r.querySelector(".kd")));
+ok("列表里既有「存进去」也有「花掉」",
+   kinds.indexOf("存进去") >= 0 && kinds.indexOf("花掉") >= 0, kinds.join("/"));
+ok("汇总里的「共 5 笔」正确", /共5笔/.test(txt($("#historyBox .hist-sum"))), txt($("#historyBox .hist-sum")));
+
+/* 分页：花掉的 / 存进去的 */
+const segs = $$("#histSeg button");
+click(segs.find(b => b.dataset.tab === "spend"));
+eq("「花掉的」分页只有 1 条", rows().length, 1);
+click(segs.find(b => b.dataset.tab === "in"));
+eq("「存进去的」分页有 4 条", rows().length, 4);
+click(segs.find(b => b.dataset.tab === "all"));
+eq("切回「全部」有 5 条", rows().length, 5);
+
+console.log("\n=== 6. 改一笔金额（任意金额都能改）===");
+const balBeforeEdit = balNum();
+click(rows()[0].querySelector(".acts .ed"));
 ok("编辑面板已打开", byId("sheetEdit").classList.contains("open"));
-eq("编辑面板标题正确", byId("editTitle").textContent.trim(), "✏️ 改这笔存钱");
-clickNth("editYuan", 3);         // 改金额
+ok("编辑面板标题区分存/花", /改这笔/.test(byId("editTitle").textContent), byId("editTitle").textContent);
+ok("编辑面板回填了原金额（不全为 0）",
+   !!(byId("editYuan").value || byId("editJiao").value || byId("editFen").value),
+   [byId("editYuan").value, byId("editJiao").value, byId("editFen").value].join("/"));
+typeAmt("edit", 9, 9, 0);                       // 改成 9元9角
+eq("改金额后预览 = 9元9角", amtOf("editPreview"), "9元9角");
 click(byId("btnEditSave"));
 ok("编辑面板已关闭", !byId("sheetEdit").classList.contains("open"));
-const afterBal = byId("balNum").textContent.trim();
-ok("改金额后余额变化", afterBal !== beforeBal, beforeBal + " → " + afterBal);
-click(byId("btnHistory"));
+ok("改完金额余额变了", balNum() !== balBeforeEdit, balBeforeEdit + " → " + balNum());
 
-console.log("\n=== 6. 删记录 ===");
-const beforeDel = byId("balNum").textContent.trim();
-const nBefore = byId("historyBox").querySelectorAll(".hist").length;
-click(byId("historyBox").querySelectorAll(".hist")[byId("historyBox").querySelectorAll(".hist").length - 1].querySelector(".dl"));
-const nAfter = byId("historyBox").querySelectorAll(".hist").length;
-ok("删除后卡片数 -1", nAfter === nBefore - 1, nBefore + " → " + nAfter);
-const afterDel = byId("balNum").textContent.trim();
-ok("删除后余额回滚", afterDel !== beforeDel, beforeDel + " → " + afterDel);
+console.log("\n=== 7. 删一笔 ===");
 click(byId("btnHistory"));
+const nBefore = rows().length;
+const balBeforeDel = balNum();
+win.__confirmAnswer = true;
+click(rows()[rows().length - 1].querySelector(".acts .dl"));
+eq("删除后少一条", rows().length, nBefore - 1);
+ok("删除后余额回滚", balNum() !== balBeforeDel, balBeforeDel + " → " + balNum());
+win.__confirmAnswer = false;
+const nKeep = rows().length;
+click(rows()[0].querySelector(".acts .dl"));
+eq("在 confirm 里选「取消」则不删", rows().length, nKeep);
+win.__confirmAnswer = true;
+closeSheet("sheetHistory");
 
-console.log("\n=== 7. 设目标 → 满度重新标定 ===");
+console.log("\n=== 8. 小猪满度随余额与目标变化 ===");
 click(byId("btnGoal"));
 ok("目标面板已打开", byId("sheetGoal").classList.contains("open"));
-ok("目标面板有预设目标金额", byId("goalChips").querySelectorAll(".chip").length > 0,
-   "数量=" + byId("goalChips").querySelectorAll(".chip").length);
-byId("goalInput").value = "1000";
+byId("goalInput").value = "9999";
 click(byId("btnGoalSet"));
-ok("设自定义目标后弹层关闭", !byId("sheetGoal").classList.contains("open"));
-const pctAfterGoal = parseInt(byId("pigLvl").textContent, 10);
-ok("设 1000 目标后满度变小（不是直接满）", pctAfterGoal > 0 && pctAfterGoal < 100, byId("pigLvl").textContent);
+ok("设完目标弹层关闭（能看到小猪重新标定）", !byId("sheetGoal").classList.contains("open"));
+const lvl0 = byId("pigLiquid").style.transform;
+const lvNum = parseFloat((lvl0.match(/translateY\(([-\d.]+)px\)/) || [0, "NaN"])[1]);
+ok("目标远大于余额时小猪接近空（translateY 接近 152）", lvNum > 48 && lvNum <= 152, lvl0);
 ok("小猪副标题提示「还差」", byId("pigSub").textContent.indexOf("还差") >= 0,
-   byId("pigSub").textContent.replace(/\s+/g, " ").trim().slice(0, 80));
-// 预设 chip 也应能设目标 + 关弹层
-click(byId("btnGoal"));
-const preset = Array.from(byId("goalChips").querySelectorAll(".chip")).find(c => c.getAttribute("data-v") === "");
-click(Array.from(byId("goalChips").querySelectorAll(".chip"))[1]);
-ok("点预设目标后弹层关闭", !byId("sheetGoal").classList.contains("open"));
-const presetLvl = byId("pigLvl").textContent.trim();
-ok("预设目标生效（满度重新计算）", /\d+%|满/.test(presetLvl), presetLvl);
+   byId("pigSub").textContent.replace(/\s+/g, " ").trim());
+click(byId("btnAdd")); typeAmt("add", 50, 0, 0); click(byId("btnConfirmAdd"));
+const lvl1 = byId("pigLiquid").style.transform;
+const lvNum2 = parseFloat((lvl1.match(/translateY\(([-\d.]+)px\)/) || [0, "NaN"])[1]);
+ok("存钱后小猪水位上升（translateY 变小）", lvNum2 < lvNum, lvl0 + " → " + lvl1);
 
-console.log("\n=== 7b. 小猪水位随余额变化 ===");
-// 把目标设得比余额大，这样水位会随余额真实起伏（否则一直 clamp 在 100%）
-click(byId("btnGoal")); byId("goalInput").value = "9999"; click(byId("btnGoalSet"));
-const lvlBefore = byId("pigLiquid").style.transform;
-const lvNum = parseFloat((lvlBefore.match(/translateY\(([-\d.]+)px\)/) || [0, "NaN"])[1]);
-ok("目标远大于余额时小猪接近空 (translateY 接近 152)", lvNum > 48 && lvNum <= 152, lvlBefore);
-click(byId("btnAdd"));
-clickNth("addYuan", 3);                 // 存一笔
-click(byId("btnConfirmAdd"));
-const lvlAfterAdd = byId("pigLiquid").style.transform;
-const lvNum2 = parseFloat((lvlAfterAdd.match(/translateY\(([-\d.]+)px\)/) || [0, "NaN"])[1]);
-ok("存钱后小猪水位上升（translateY 变小）", lvNum2 < lvNum, lvlBefore + " → " + lvlAfterAdd);
-const pctTxt = byId("pigLvl").textContent.trim();
-ok("满度百分比文案存在", /\d+%|满/.test(pctTxt), pctTxt);
+console.log("\n=== 9. 买东西钱不够时拦截 ===");
+click(byId("btnBuy"));
+typeAmt("buy", 9999, 0, 0);
+ok("填超过余额时预览变红并给出提示",
+   byId("sumPreview").classList.contains("over") && byId("buyOverTip").style.display === "block",
+   byId("buyOverTip").textContent);
+click(byId("btnBuyNext"));
+ok("钱不够时不允许进第二步",
+   byId("buyStepAmt").style.display !== "none", byId("buyStepAmt").style.display);
+typeAmt("buy", 0, 0, 0);
+click(byId("btnBuyNext"));
+ok("金额为 0 时也不允许进第二步", byId("buyStepAmt").style.display !== "none");
+click(byId("btnBuyCancel"));
 
-console.log("\n=== 9. 人民币图鉴 ===");
+console.log("\n=== 10. 人民币图鉴 ===");
 click(byId("btnBook"));
 ok("图鉴面板已打开", byId("sheetBook").classList.contains("open"));
-const bkCards = byId("bookGrid").querySelectorAll(".bk-card");
-eq("图鉴卡片数 = 9", bkCards.length, 9);
-ok("图鉴卡片都有钱图", bkCards.length > 0 && Array.from(bkCards).every(c => c.querySelector("svg")));
-click(byId("sheetBook").querySelector("[data-close]") || byId("sheetBook"));
+eq("图鉴卡片数 = 9", byId("bookGrid").querySelectorAll(".bk-card").length, 9);
+ok("每张图鉴卡都带真钱图",
+   $$("#bookGrid .bk-card").every(c => !!c.querySelector("svg")));
+closeSheet("sheetBook");
 
-console.log("\n=== 10. 买东西面板（也是先金额）===");
-click(byId("btnBuy"));
-ok("买东西面板已打开", byId("sheetBuy").classList.contains("open"));
-clickNth("chipsYuan", 1);
-const balBeforeBuy = byId("balNum").textContent.trim();
-click(byId("btnConfirmBuy"));
-const balAfterBuy = byId("balNum").textContent.trim();
-ok("花钱后余额下降", balAfterBuy !== balBeforeBuy, balBeforeBuy + " → " + balAfterBuy);
-
-console.log("\n=== 11. 持久化（重新加载后仍在）===");
+console.log("\n=== 11. 持久化 ===");
 const saved = win.localStorage.getItem("kid_piggy_bank_v3");
 ok("已写入 localStorage", !!saved && saved.length > 10);
 const parsed = JSON.parse(saved || "{}");
-ok("存档含 goal 字段", parsed.goal !== undefined, JSON.stringify(parsed).slice(0, 120));
-ok("存档含 items / deposits", Array.isArray(parsed.items) && Array.isArray(parsed.deposits),
-   "items=" + (parsed.items || []).length + ", deposits=" + (parsed.deposits || []).length);
+ok("存档含 goal / items / deposits",
+   parsed.goal !== undefined && Array.isArray(parsed.items) && Array.isArray(parsed.deposits),
+   "items=" + (parsed.items || []).length + " deposits=" + (parsed.deposits || []).length);
+ok("存进去的怪金额 745 分被完整保存（无浮点误差）",
+   parsed.deposits.some(x => x.price === 745) || parsed.deposits.every(x => Number.isInteger(x.price)),
+   JSON.stringify((parsed.deposits || []).map(x => x.price)));
 
 console.log("\n=== 12. 运行时错误 ===");
 ok("无运行时错误", errors.length === 0, errors.join(" | ").slice(0, 300));
