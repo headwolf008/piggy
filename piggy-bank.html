@@ -87,7 +87,6 @@
   .u-yuan .v{color:var(--red)}
   .u-jiao .v{color:var(--jiao)}
   .u-fen  .v{color:var(--fen)}
-  /* 0值弱化 */
   .unit-box.zero{opacity:.3}
 
   /* 横向对比条 */
@@ -235,7 +234,7 @@
   .sheet.open{display:flex;animation:fadeIn .2s ease}
   @keyframes fadeIn{from{opacity:0}to{opacity:1}}
   .sheet-body{
-    width:100%;max-width:640px;max-height:84vh;overflow-y:auto;
+    width:100%;max-width:640px;max-height:88vh;overflow-y:auto;
     background:var(--card);border-radius:26px 26px 0 0;
     padding:16px 15px calc(20px + var(--safe-b));
     animation:slideUp .3s cubic-bezier(.34,1.3,.64,1);
@@ -243,7 +242,6 @@
     box-shadow:0 -8px 30px rgba(74,55,40,.25);
   }
   @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
-  /* 悬浮余额：右上角，元角分同时显示 */
   .echo{
     position:absolute;top:calc(12px + var(--safe-t));right:14px;
     background:rgba(255,255,255,.97);border-radius:17px;padding:6px 13px;
@@ -263,10 +261,27 @@
   }
   .close-x:active{transform:scale(.92)}
 
-  /* 相机 */
+  /* 步骤条 */
+  .steps{display:flex;align-items:center;gap:9px;margin-bottom:13px}
+  .step{
+    flex:1;display:flex;flex-direction:column;gap:5px;align-items:center;
+    font-size:12px;font-weight:900;color:#BCAAA4;
+  }
+  .step .n{
+    width:26px;height:26px;border-radius:50%;background:#F1E4CE;color:#BCAAA4;
+    display:flex;align-items:center;justify-content:center;font-size:13px;
+  }
+  .step.on{color:var(--red)}
+  .step.on .n{background:var(--red);color:#fff}
+  .step.done{color:var(--jiao)}
+  .step.done .n{background:var(--jiao);color:#fff}
+  .step-line{flex:0 0 22px;height:3px;border-radius:3px;background:#F1E4CE;margin-top:-9px}
+
+  /* 相机（压缩尺寸，仅存小图） */
   .cam-box{
     width:100%;border-radius:17px;overflow:hidden;background:#000;
     position:relative;aspect-ratio:4/3;display:flex;align-items:center;justify-content:center;
+    max-height:38vh;
   }
   .cam-box video{width:100%;height:100%;object-fit:cover;position:absolute;inset:0;z-index:2}
   .cam-box canvas{display:none}
@@ -280,6 +295,29 @@
   .cam-ph.hide{display:none}
   .shot{width:100%;border-radius:17px;display:block;background:#000}
   .row2{display:flex;gap:10px;margin-top:11px}
+
+  /* 可选拍照区 */
+  .photo-row{
+    display:flex;gap:11px;align-items:center;background:#FFF8E7;
+    border:2px dashed #FFE0B2;border-radius:16px;padding:11px;
+  }
+  .thumb{
+    width:78px;height:78px;border-radius:13px;background:#F1E4CE;flex-shrink:0;
+    display:flex;align-items:center;justify-content:center;text-align:center;
+    color:#BCAAA4;font-size:11px;font-weight:800;line-height:1.45;overflow:hidden;padding:4px;
+  }
+  .thumb.has{background:#E8F5E9;border-color:#A5D6A7;color:#2E7D32}
+  .thumb img{width:100%;height:100%;object-fit:cover;display:block;border-radius:9px}
+  .photo-btns{flex:1;min-width:0;display:flex;flex-direction:column;gap:7px}
+  .photo-btns .mini{width:100%}
+  .skip-hint{
+    text-align:center;font-size:12.5px;color:#A1887F;font-weight:800;
+    margin:10px 0 2px;line-height:1.6;
+  }
+  .mini-note{
+    text-align:center;font-size:11.5px;color:#A1887F;font-weight:700;margin-top:8px;line-height:1.6;
+  }
+  .mini-note b{color:var(--jiao)}
 
   /* 价格：三层（元/角/分）拨盘式 */
   .pick-block{margin-bottom:12px}
@@ -337,12 +375,22 @@
   .mini-g{background:linear-gradient(180deg,#66BB6A,#43A047);color:#fff;box-shadow:0 4px 0 #2E7D32}
 
   /* 历史 */
+  .seg{display:flex;gap:5px;background:#F1E4CE;border-radius:13px;padding:4px;margin-bottom:12px}
+  .seg button{
+    flex:1;border:none;background:transparent;padding:9px 4px;border-radius:10px;
+    font-size:14px;font-weight:900;color:#8D6E63;font-family:inherit;cursor:pointer;
+  }
+  .seg button.on{background:#fff;color:var(--red);box-shadow:0 2px 6px rgba(74,55,40,.15)}
   .hist-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:10px}
   .hist{
     border-radius:14px;overflow:hidden;background:#fff;position:relative;
     box-shadow:0 4px 12px rgba(74,55,40,.13);
   }
   .hist img{width:100%;aspect-ratio:1;object-fit:cover;display:block;background:#F1E4CE}
+  .hist .ph{
+    width:100%;aspect-ratio:1;display:flex;align-items:center;justify-content:center;
+    font-size:38px;background:#F1E4CE;
+  }
   .hist .tag{
     position:absolute;top:5px;left:5px;
     background:rgba(232,69,60,.95);color:#fff;font-weight:900;font-size:12px;
@@ -350,12 +398,14 @@
     box-shadow:0 2px 6px rgba(184,51,44,.4);line-height:1.15;
     display:flex;align-items:baseline;gap:1px;
   }
+  .hist .tag.in{background:rgba(67,160,71,.95)}
   .hist .tag small{font-size:9px;opacity:.85}
   .hist .hbar{
     position:absolute;left:0;bottom:0;height:5px;
     background:linear-gradient(90deg,#FF7043,#E8453C);
     transition:width .5s;
   }
+  .hist .hbar.in{background:linear-gradient(90deg,#66BB6A,#43A047)}
   .hist .del{
     position:absolute;bottom:5px;right:5px;width:29px;height:29px;
     border-radius:50%;border:none;background:rgba(74,55,40,.7);color:#fff;
@@ -364,7 +414,7 @@
   .none-txt{text-align:center;padding:32px 16px;color:#BCAAA4;font-size:15px;line-height:1.9}
   .none-txt .big{font-size:46px;display:block;margin-bottom:6px;opacity:.45}
 
-  /* Toast：移到屏幕下方，避开钞票墙 */
+  /* Toast */
   .toast{
     position:fixed;left:50%;bottom:calc(96px + var(--safe-b));
     transform:translateX(-50%) scale(.85);
@@ -379,7 +429,7 @@
   .toast .amt b{font-variant-numeric:tabular-nums;font-size:19px}
   .toast .amt s{font-size:11px;opacity:.8;text-decoration:none;margin-right:3px}
 
-  /* 撒钱：只在顶部 26vh 内飘落，避开钞票墙 */
+  /* 撒钱 */
   .confetti{position:fixed;top:0;left:0;right:0;height:0;pointer-events:none;z-index:300}
   .confetti i{position:absolute;top:-40px;font-style:normal;animation:fall linear forwards}
   @keyframes fall{to{transform:translateY(26vh) rotate(540deg);opacity:0}}
@@ -405,6 +455,7 @@
     .coin{width:46px;height:46px;font-size:15px}
     .jiao{width:40px;height:40px;font-size:14px}
     .fen{width:30px;height:30px;font-size:11px}
+    .thumb{width:66px;height:66px}
   }
 </style>
 </head>
@@ -436,7 +487,6 @@
         <span class="piggy">🐷</span>
         <span class="mood" id="moodIco">😄</span>
       </div>
-      <!-- 元角分三段 -->
       <div class="yjf">
         <div class="unit-box u-yuan" id="boxYuan"><span class="v">200</span><span class="u">元</span></div>
         <div class="unit-box u-jiao zero" id="boxJiao"><span class="v">0</span><span class="u">角</span></div>
@@ -477,71 +527,80 @@
   </div>
   <div class="sheet-body">
     <div class="sheet-head">
-      <div class="sheet-title">📷 买了什么</div>
+      <div class="sheet-title">🛒 花了多少</div>
       <button class="close-x" data-close>✕</button>
     </div>
 
-    <div id="stepCam">
-      <div class="ios-tip" id="iosTip">
-        <span class="ic">💡</span>
-        <span>相机打不开？点下面「从相册选」一样可以记账</span>
-      </div>
-      <div class="cam-box">
-        <video id="video" autoplay playsinline muted></video>
-        <div class="cam-ph" id="camPh">
-          <span class="big-ico">📷</span>
-          <span>点下面按钮开相机</span>
-        </div>
-      </div>
-      <canvas id="canvas"></canvas>
-      <div class="row2">
-        <button class="mini mini-o" id="btnOpenCam">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-          相机
-        </button>
-        <button class="mini mini-r" id="btnShot" style="flex:1.5">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M3 9h3l2-3h8l2 3h3v9H3z"/></svg>
-          拍下来
-        </button>
-      </div>
-      <div class="row2">
-        <button class="mini mini-o" id="btnPickFile">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
-          从相册选
-        </button>
-      </div>
-      <input type="file" id="fileInput" accept="image/*" style="display:none">
+    <div class="steps">
+      <div class="step on" id="buyStep1"><span class="n">1</span><span>选金额</span></div>
+      <div class="step-line"></div>
+      <div class="step" id="buyStep2"><span class="n">2</span><span>拍照(可不拍)</span></div>
     </div>
 
-    <div id="stepConfirm" style="display:none">
-      <img class="shot" id="shotPreview" alt="">
-      <!-- 已选金额预览 -->
-      <div class="sum-preview" id="sumPreview" style="margin-top:12px"></div>
-      <!-- 元 -->
+    <!-- 第一步：必须先选金额 -->
+    <div id="buyStepAmt">
+      <div class="sum-preview" id="sumPreview"></div>
       <div class="pick-block">
         <div class="pick-head"><span class="dot d-yuan"></span>元</div>
         <div class="chips" id="chipsYuan"></div>
       </div>
-      <!-- 角 -->
       <div class="pick-block">
         <div class="pick-head"><span class="dot d-jiao"></span>角</div>
         <div class="chips" id="chipsJiao"></div>
       </div>
-      <!-- 分 -->
       <div class="pick-block">
         <div class="pick-head"><span class="dot d-fen"></span>分</div>
         <div class="chips" id="chipsFen"></div>
       </div>
+      <div class="pick-head" style="color:#E65100">📸 下一步可以拍张照片，不拍也行</div>
       <div class="row2">
-        <button class="mini mini-o" id="btnRetake">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg>
-          重拍
-        </button>
-        <button class="mini mini-r" id="btnConfirmBuy" style="flex:1.6">
+        <button class="mini mini-o" id="btnBuyCancel">取消</button>
+        <button class="mini mini-r" id="btnBuyNext" style="flex:1.6">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
-          就是这个
+          下一步
         </button>
       </div>
+    </div>
+
+    <!-- 第二步：拍照（可选） -->
+    <div id="buyStepPhoto" style="display:none">
+      <div class="cam-box">
+        <video id="videoBuy" autoplay playsinline muted></video>
+        <div class="cam-ph" id="camPhBuy">
+          <span class="big-ico">📷</span>
+          <span>点下面「相机」开摄像头<br>不想拍就点「💾 保存」</span>
+        </div>
+      </div>
+      <div class="photo-row">
+        <div class="thumb" id="buyThumb">还没拍照</div>
+        <div class="photo-btns">
+          <button class="mini mini-o" id="btnOpenCam">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+            相机
+          </button>
+          <button class="mini mini-g" id="btnShot" style="flex:1.4">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M3 9h3l2-3h8l2 3h3v9H3z"/></svg>
+            拍下来
+          </button>
+          <button class="mini mini-o" id="btnPickFile">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+            从相册选
+          </button>
+          <button class="mini mini-o" id="btnBuyClearPhoto">删掉照片</button>
+        </div>
+      </div>
+      <div class="skip-hint">不想拍照？直接点下面的「💾 保存」就好 👇</div>
+      <canvas id="canvas"></canvas>
+      <div class="ios-tip" id="iosTip">
+        <span class="ic">💡</span>
+        <span>相机打不开？点上面「从相册选」一样可以留个纪念</span>
+      </div>
+      <input type="file" id="fileInput" accept="image/*" style="display:none">
+      <div class="row2">
+        <button class="mini mini-o" id="btnBuyBack">上一步</button>
+        <button class="mini mini-r" id="btnConfirmBuy" style="flex:1.6">💾 保存</button>
+      </div>
+      <div class="mini-note">金额：<b id="buyAmtEcho">—</b> ｜ 照片：可留可不留</div>
     </div>
   </div>
 </div>
@@ -570,11 +629,29 @@
       <div class="pick-head"><span class="dot d-fen"></span>分</div>
       <div class="chips" id="addFen"></div>
     </div>
+
+    <div class="pick-head" style="color:#E65100">📸 拍张照片（可以不拍）</div>
+    <div class="cam-box" id="camBoxAdd" style="display:none">
+      <video id="videoAdd" autoplay playsinline muted></video>
+      <div class="cam-ph" id="camPhAdd">
+        <span class="big-ico">📷</span>
+        <span>点下面「相机」开摄像头<br>不想拍就点「✅ 存进去」</span>
+      </div>
+    </div>
+    <div class="photo-row">
+      <div class="thumb" id="addThumb">还没拍照</div>
+      <div class="photo-btns">
+        <button class="mini mini-o" id="btnAddCam">📷 相机</button>
+        <button class="mini mini-g" id="btnAddShot" style="flex:1.4">拍下来</button>
+        <button class="mini mini-o" id="btnAddFile">🖼 从相册选</button>
+        <button class="mini mini-o" id="btnAddClearPhoto">删掉照片</button>
+      </div>
+    </div>
+    <div class="skip-hint">不拍照也完全没问题，点「✅ 存进去」就行 👇</div>
+    <input type="file" id="addFileInput" accept="image/*" style="display:none">
+
     <div class="row2">
-      <button class="mini mini-g" id="btnConfirmAdd" style="padding:16px;font-size:17px">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
-        存进去
-      </button>
+      <button class="mini mini-g" id="btnConfirmAdd" style="padding:16px;font-size:17px">✅ 存进去</button>
     </div>
   </div>
 </div>
@@ -583,8 +660,13 @@
 <div class="sheet" id="sheetHistory">
   <div class="sheet-body">
     <div class="sheet-head">
-      <div class="sheet-title">🧾 买过的东西</div>
+      <div class="sheet-title">🧾 记账本</div>
       <button class="close-x" data-close>✕</button>
+    </div>
+    <div class="seg" id="histSeg">
+      <button data-tab="all" class="on">全部</button>
+      <button data-tab="spend">买过</button>
+      <button data-tab="in">存过</button>
     </div>
     <div id="historyBox"></div>
   </div>
@@ -599,14 +681,12 @@
 
   /* ============================================================
      核心：金额一律用「分」作整数存储和运算，绝不使用浮点数。
-     ¥1 = 10角 = 100分
      ============================================================ */
   var START_FEN = 20000;          // 初始基金 200元 = 20000分
   var STORAGE_KEY = "kid_piggy_bank_v3";
   var CIRC = 2 * Math.PI * 51;
   var MAX_SHOW = 8;               // 单面额最多画几个
 
-  /* ---------- 元角分拆解（纯整数运算） ---------- */
   function split(fen){
     fen = Math.max(0, Math.round(fen));
     var yuan = Math.floor(fen / 100);
@@ -615,18 +695,16 @@
     return {yuan:yuan, jiao:jiao, fen:f, total:fen};
   }
 
-  /* 格式化成中文：1元8角5分 */
   function fmt(fen){
     var p = split(fen);
-    var s = "";
     if(p.total === 0) return "0元";
+    var s = "";
     if(p.yuan) s += p.yuan + "元";
     if(p.jiao) s += p.jiao + "角";
     if(p.fen)  s += p.fen + "分";
     return s || "0元";
   }
 
-  /* 生成元角分 HTML 片段 */
   function fmtHTML(fen, skipZero){
     var p = split(fen);
     if(p.total === 0) return '<span class="sp-box"><span class="v" style="color:#BCAAA4">0</span><span class="u">元</span></span>';
@@ -637,13 +715,8 @@
     return out;
   }
 
-  /* ---------- 面额体系（单位：分） ---------- */
-  // 元票：100元/50元/10元/5元/1元   角币：5角/1角   分币：1分
   var YUAN_NOTES = [ {fen:10000,v:100}, {fen:5000,v:50}, {fen:1000,v:10}, {fen:500,v:5} ];
-  var YUAN_COIN  = 100;    // 1元硬币
-  var JIAO_5 = 50, JIAO_1 = 10, FEN_1 = 1;
 
-  /* 拆解成面额组合 */
   function breakdown(fen){
     var r = Math.max(0, Math.round(fen));
     var out = {n10000:0,n5000:0,n1000:0,n500:0,c100:0,j50:0,j10:0,f1:0};
@@ -654,35 +727,59 @@
     while(r >= 100){ out.c100++; r -= 100; }
     while(r >= 50){ out.j50++; r -= 50; }
     while(r >= 10){ out.j10++; r -= 10; }
-    out.f1 = r;   // 余下全是分
+    out.f1 = r;
     return out;
   }
 
   /* ---------- 状态 ---------- */
-  var state = { initial: START_FEN, added: 0, items: [] };
+  var state = { initial: START_FEN, added: 0, items: [], deposits: [] };
+
+  function num(v, def){ return (typeof v === "number" && isFinite(v)) ? Math.round(v) : def; }
 
   function load(){
     try{
       var raw = localStorage.getItem(STORAGE_KEY);
-      if(raw){
-        var d = JSON.parse(raw);
-        if(d && typeof d === "object"){
-          state.initial = (typeof d.initial === "number" && isFinite(d.initial)) ? Math.round(d.initial) : START_FEN;
-          state.added   = (typeof d.added   === "number" && isFinite(d.added))   ? Math.round(d.added)   : 0;
-          state.items   = Array.isArray(d.items) ? d.items.filter(function(x){
-            return x && typeof x.price === "number" && isFinite(x.price);
-          }).map(function(x){
-            return { id:String(x.id||""), price:Math.round(x.price), img:String(x.img||""), time:String(x.time||"") };
-          }) : [];
-        }
-      }
+      if(!raw) return;
+      var d = JSON.parse(raw);
+      if(!d || typeof d !== "object") return;
+      state.initial = num(d.initial, START_FEN);
+      state.added   = num(d.added, 0);
+      state.items   = Array.isArray(d.items) ? d.items.filter(function(x){
+        return x && typeof x.price === "number" && isFinite(x.price);
+      }).map(function(x){
+        return {
+          id: String(x.id||""),
+          price: Math.round(x.price),
+          img: String(x.img||""),
+          time: String(x.time||""),
+          kind: x.kind === "in" ? "in" : "spend"
+        };
+      }) : [];
+      // 新功能：存钱记录（可带照片）
+      state.deposits = Array.isArray(d.deposits) ? d.deposits.filter(function(x){
+        return x && typeof x.price === "number" && isFinite(x.price);
+      }).map(function(x){
+        return {
+          id: String(x.id||""),
+          price: Math.round(x.price),
+          img: String(x.img||""),
+          time: String(x.time||"")
+        };
+      }) : [];
     }catch(e){}
   }
   function save(){
     try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
-    catch(e){ toast("😥","存不下了","删掉一些旧记录吧"); }
+    catch(e){
+      toast("😥","存不下了","照片太大？删掉一些旧记录吧");
+    }
   }
-  function income(){ return state.initial + state.added; }
+  function depositTotal(){
+    var s = 0;
+    for(var i=0;i<state.deposits.length;i++) s += state.deposits[i].price;
+    return s;
+  }
+  function income(){ return state.initial + state.added + depositTotal(); }
   function spent(){
     var s = 0;
     for(var i=0;i<state.items.length;i++) s += state.items[i].price;
@@ -707,11 +804,9 @@
     var pct = inc > 0 ? Math.max(0, Math.min(100, b / inc * 100)) : 0;
     var p = split(b);
 
-    // 环形中心只显示整数元（空间有限）
     ringYuan.textContent = p.yuan;
     ring.style.strokeDashoffset = (CIRC * (1 - pct/100)).toFixed(2);
 
-    // 元角分三段
     boxYuan.querySelector(".v").textContent = p.yuan;
     boxJiao.querySelector(".v").textContent = p.jiao;
     boxFen.querySelector(".v").textContent  = p.fen;
@@ -719,17 +814,14 @@
     boxFen.classList.toggle("zero",  p.fen  === 0);
     boxYuan.classList.toggle("zero", p.yuan === 0 && (p.jiao || p.fen));
 
-    // 悬浮余额：元 + 角分（有角分时全称，否则只显示元）
     var echoTxt = (p.jiao || p.fen) ? fmt(b) : (p.yuan + "元");
     echoBuyV.textContent = echoTxt;
     echoAddV.textContent = echoTxt;
 
-    // 对比条
     cmpLeft.style.width = pct + "%";
     cmpRight.style.width = (100 - pct) + "%";
     cmpLeft.querySelector(".cmp-ico").style.display = pct > 13 ? "" : "none";
 
-    // 情绪图标
     if(b <= 0){ moodIco.textContent = "😭"; }
     else if(pct >= 70){ moodIco.textContent = "😄"; }
     else if(pct >= 40){ moodIco.textContent = "🙂"; }
@@ -796,7 +888,6 @@
       frag.appendChild(el);
     }
 
-    /* 元票：100 / 50 / 10 / 5 */
     YUAN_NOTES.forEach(function(item){
       var n = bk["n"+item.fen] || 0;
       if(!n) return;
@@ -810,7 +901,6 @@
       }
     });
 
-    /* 1元硬币 */
     var c100 = bk.c100;
     if(c100){
       var showC = Math.min(c100, MAX_SHOW);
@@ -823,7 +913,6 @@
       }
     }
 
-    /* 角币：5角 / 1角 */
     if(bk.j50 || bk.j10){
       var lbl = document.createElement("div");
       lbl.className = "grp";
@@ -847,7 +936,6 @@
       frag.appendChild(m10);
     }
 
-    /* 分币 */
     if(bk.f1){
       var lbf = document.createElement("div");
       lbf.className = "grp";
@@ -857,8 +945,8 @@
       for(var k=0;k<showF;k++) addEl(makeFen());
       if(bk.f1 > showF){
         var mf = document.createElement("div");
-        mf.className = "fen"; mf.style.width = "auto"; mf.style.padding = "0 9px";
-        mf.style.borderRadius = "17px"; mf.style.width = "58px";
+        mf.className = "fen"; mf.style.width = "58px";
+        mf.style.borderRadius = "17px"; mf.style.padding = "0 9px";
         mf.textContent = "1×" + bk.f1;
         frag.appendChild(mf);
       }
@@ -868,6 +956,18 @@
   }
 
   function renderAll(animate){ renderTotal(animate); renderMoney(); }
+
+  /* 历史：统一记录流（存钱 in / 花掉 spend） */
+  function allRecords(){
+    var out = [];
+    state.deposits.forEach(function(x){
+      out.push({ id:x.id, price:x.price, img:x.img, time:x.time, kind:"in" });
+    });
+    state.items.forEach(function(x){
+      out.push({ id:x.id, price:x.price, img:x.img, time:x.time, kind:(x.kind === "in" ? "in" : "spend") });
+    });
+    return out;
+  }
 
   /* ---------- Toast ---------- */
   var toastEl = document.getElementById("toast");
@@ -881,12 +981,11 @@
     clearTimeout(toastTimer);
     toastTimer = setTimeout(function(){ toastEl.classList.remove("show"); }, 1900);
   }
-  /* toast 里金额用元角分显示 */
   function amtSpan(fen, label){
     return '<div class="amt">'+(label?'<span style="font-size:13px;opacity:.9">'+label+'</span>':'')+fmtHTML(fen)+'</div>';
   }
 
-  /* ---------- 撒钱（限制在顶部区域，不遮挡钞票墙） ---------- */
+  /* ---------- 撒钱 ---------- */
   function confetti(){
     var box = document.getElementById("confetti");
     var es = ["💵","🪙","💰","✨","🎉"];
@@ -916,20 +1015,61 @@
     });
   });
 
-  /* ---------- 相机 ---------- */
-  var video = document.getElementById("video");
+  /* ---------- 相机 / 相册（都是可选项） ---------- */
   var canvas = document.getElementById("canvas");
-  var camPh = document.getElementById("camPh");
   var stream = null;
-  var photo = null;
+
+  /* 「买东西」和「存钱」两个面板各有一块取景框，取景时激活对应那块 */
+  var CAMS = {
+    buy: { video:document.getElementById("videoBuy"), ph:document.getElementById("camPhBuy"), box:null },
+    add: { video:document.getElementById("videoAdd"), ph:document.getElementById("camPhAdd"), box:document.getElementById("camBoxAdd") }
+  };
+  var activeCam = CAMS.buy;
+  function byId(id){ return document.getElementById(id); }
+
+  /* 照片是「可选项」：photo.thumbEl 指向当前正在编辑的缩略图容器 */
+  var photo = { url:null, thumbEl:null };
+
+  function paintThumb(){
+    var t = photo.thumbEl;
+    if(!t) return;
+    if(photo.url){
+      t.classList.add("has");
+      t.innerHTML = '<img src="'+photo.url+'" alt="">';
+    }else{
+      t.classList.remove("has");
+      t.textContent = "还没拍照";
+    }
+  }
+  function setPhoto(url){
+    photo.url = url;
+    paintThumb();
+    if(url) toast("📸","照片加好啦");
+  }
+  function clearPhoto(){
+    photo.url = null;
+    paintThumb();
+  }
 
   function stopCamera(){
     if(stream){ stream.getTracks().forEach(function(t){ t.stop(); }); stream = null; }
-    video.srcObject = null;
-    camPh.classList.remove("hide");
+    CAMS.buy.video.srcObject = null;
+    CAMS.buy.ph.classList.remove("hide");
+    CAMS.add.video.srcObject = null;
+    CAMS.add.ph.classList.remove("hide");
+    CAMS.add.box.style.display = "none";
   }
-  function startCamera(){
-    if(stream) return;
+  function startCamera(key){
+    activeCam = CAMS[key] || CAMS.buy;
+    if(activeCam.box) activeCam.box.style.display = "block";
+    if(stream){
+      // 已在取景：直接把画面给当前这块
+      activeCam.video.srcObject = stream;
+      activeCam.ph.classList.add("hide");
+      var pr = activeCam.video.play();
+      if(pr && pr.catch) pr.catch(function(){});
+      return;
+    }
     if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
       document.getElementById("iosTip").classList.add("show");
       return;
@@ -938,46 +1078,32 @@
       video:{ facingMode:{ideal:"environment"}, width:{ideal:1280}, height:{ideal:960} },
       audio:false
     }).then(function(s){
-      stream = s; video.srcObject = s;
-      camPh.classList.add("hide");
-      return video.play();
+      stream = s;
+      CAMS.buy.video.srcObject = s;  CAMS.buy.ph.classList.add("hide");
+      CAMS.add.video.srcObject = s;  CAMS.add.ph.classList.add("hide");
+      if(activeCam.box) activeCam.box.style.display = "block";
+      activeCam.playing = true;
+      return activeCam.video.play();
     }).catch(function(err){
       console.warn("camera fail", err);
       document.getElementById("iosTip").classList.add("show");
       toast("📁","用「从相册选」吧","相机没能打开");
     });
   }
-  function resetBuy(){
-    photo = null; picked = {yuan:0, jiao:0, fen:0};
-    document.getElementById("stepCam").style.display = "block";
-    document.getElementById("stepConfirm").style.display = "none";
-    buildBuyPickers();
-  }
-  function showConfirm(url){
-    photo = url;
-    document.getElementById("shotPreview").src = url;
-    document.getElementById("stepCam").style.display = "none";
-    document.getElementById("stepConfirm").style.display = "block";
-    buildBuyPickers();
-  }
-  document.getElementById("btnOpenCam").addEventListener("click", startCamera);
-
-  document.getElementById("btnShot").addEventListener("click", function(){
-    if(!stream){ startCamera(); return; }
-    var w = video.videoWidth, h = video.videoHeight;
+  /* 用当前激活的那块取景框拍一张 */
+  function shootFromActive(){
+    var v = activeCam.video;
+    var w = v.videoWidth, h = v.videoHeight;
     if(!w || !h){ toast("⏳","相机还在准备","稍等一下"); return; }
     var sc = Math.min(1, 720/Math.max(w,h));
     canvas.width = Math.round(w*sc); canvas.height = Math.round(h*sc);
-    canvas.getContext("2d").drawImage(video, 0, 0, canvas.width, canvas.height);
+    canvas.getContext("2d").drawImage(v, 0, 0, canvas.width, canvas.height);
     var url = canvas.toDataURL("image/jpeg", 0.72);
-    stopCamera(); showConfirm(url);
-  });
-  document.getElementById("btnPickFile").addEventListener("click", function(){
-    document.getElementById("fileInput").click();
-  });
-  document.getElementById("fileInput").addEventListener("change", function(e){
-    var f = e.target.files && e.target.files[0];
-    if(!f) return;
+    stopCamera();
+    return url;
+  }
+  function processFile(file){
+    if(!file) return;
     var rd = new FileReader();
     rd.onload = function(ev){
       var img = new Image();
@@ -986,16 +1112,34 @@
         var sc = Math.min(1, 720/Math.max(w,h));
         canvas.width = Math.round(w*sc); canvas.height = Math.round(h*sc);
         canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
-        stopCamera(); showConfirm(canvas.toDataURL("image/jpeg", 0.72));
+        setPhoto(canvas.toDataURL("image/jpeg", 0.72));
       };
       img.src = ev.target.result;
     };
-    rd.readAsDataURL(f);
+    rd.readAsDataURL(file);
+  }
+
+  document.getElementById("btnOpenCam").addEventListener("click", function(){ startCamera("buy"); });
+  document.getElementById("btnShot").addEventListener("click", function(){
+    if(!stream){ startCamera("buy"); return; }
+    setPhoto(shootFromActive());
+  });
+  document.getElementById("btnPickFile").addEventListener("click", function(){
+    document.getElementById("fileInput").click();
+  });
+  document.getElementById("fileInput").addEventListener("change", function(e){
+    var f = e.target.files && e.target.files[0];
+    processFile(f);
     e.target.value = "";
   });
-  document.getElementById("btnRetake").addEventListener("click", function(){
-    resetBuy(); startCamera();
+  document.getElementById("btnBuyClearPhoto").addEventListener("click", function(){
+    stopCamera(); clearPhoto(); toast("🗑","照片删掉了","这次不拍照也行");
   });
+  /* 存钱面板的相机/相册：把缩略图画到「存钱」那格 */
+  function bindAddPhoto(fn){
+    photo.thumbEl = document.getElementById("addThumb");
+    fn();
+  }
 
   /* ---------- 元角分三级选价 ---------- */
   var YUAN_OPTS = [0,1,2,3,5,8,10,15,20,30,50];
@@ -1008,11 +1152,7 @@
   function renderPreview(boxId){
     var box = document.getElementById(boxId);
     var t = pickedFen();
-    if(t === 0){
-      box.innerHTML = '<span class="empty-sum">点下面选金额</span>';
-    }else{
-      box.innerHTML = fmtHTML(t, true);
-    }
+    box.innerHTML = t === 0 ? '<span class="empty-sum">点下面选金额（这一步必填）</span>' : fmtHTML(t, true);
   }
 
   function buildPicker(boxId, opts, unitKind, key){
@@ -1037,14 +1177,12 @@
     });
   }
 
-  /* 按余额禁用超出的选项 */
   function refreshBuyLimits(){
     var bal = balance();
     [["chipsYuan","yuan",100],["chipsJiao","jiao",10],["chipsFen","fen",1]].forEach(function(cfg){
       var key = cfg[1], mult = cfg[2];
       document.querySelectorAll("#"+cfg[0]+" .chip").forEach(function(ch){
         var v = +ch.dataset.v;
-        // 其余两段取当前值，算总和是否超余额
         var others = 0;
         ["yuan","jiao","fen"].forEach(function(k){
           if(k !== key) others += picked[k] * (k==="yuan"?100:k==="jiao"?10:1);
@@ -1063,30 +1201,79 @@
     refreshBuyLimits();
   }
 
-  /* ---------- 确认购买 ---------- */
-  document.getElementById("btnConfirmBuy").addEventListener("click", function(){
-    if(!photo){ toast("📷","先拍张照片"); return; }
+  /* ---------- 买东西：第一步选金额 → 第二步拍照（可选） ---------- */
+  var buyStepAmt = document.getElementById("buyStepAmt");
+  var buyStepPhoto = document.getElementById("buyStepPhoto");
+  var buyStep1 = document.getElementById("buyStep1");
+  var buyStep2 = document.getElementById("buyStep2");
+  var buyAmtEcho = document.getElementById("buyAmtEcho");
+
+  function showBuyStep(n){
+    if(n === 1){
+      buyStepAmt.style.display = "block";
+      buyStepPhoto.style.display = "none";
+      buyStep1.classList.add("on"); buyStep1.classList.remove("done");
+      buyStep2.classList.remove("on");
+      stopCamera();
+    }else{
+      buyStepAmt.style.display = "none";
+      buyStepPhoto.style.display = "block";
+      buyStep1.classList.remove("on"); buyStep1.classList.add("done");
+      buyStep2.classList.add("on");
+      var p = split(pickedFen());
+      buyAmtEcho.textContent = fmt(pickedFen());
+      startCamera();
+    }
+  }
+
+  function resetBuy(){
+    picked = {yuan:0, jiao:0, fen:0};
+    photo.url = null;
+    photo.thumbEl = document.getElementById("buyThumb");   // 缩略图画到「买东西」这格
+    paintThumb();
+    document.getElementById("iosTip").classList.remove("show");
+    buildBuyPickers();
+    showBuyStep(1);
+  }
+
+  document.getElementById("btnBuyNext").addEventListener("click", function(){
     var price = pickedFen();
-    if(price <= 0){ toast("🪙","选个金额"); return; }
+    if(price <= 0){ toast("🪙","先选个金额","这一步必填哦"); return; }
     if(price > balance()){ toast("😯","钱不够","挑个便宜点的"); return; }
+    showBuyStep(2);
+  });
+  document.getElementById("btnBuyBack").addEventListener("click", function(){
+    stopCamera(); showBuyStep(1);
+  });
+  document.getElementById("btnBuyCancel").addEventListener("click", function(){
+    closeSheet(document.getElementById("sheetBuy"));
+  });
+
+  document.getElementById("btnConfirmBuy").addEventListener("click", function(){
+    var price = pickedFen();
+    if(price <= 0){ toast("🪙","先选个金额","这一步必填哦"); return; }
+    if(price > balance()){ toast("😯","钱不够","挑个便宜点的"); return; }
+    var imgURL = photo.url || "";
 
     state.items.unshift({
       id: Date.now() + "_" + Math.random().toString(36).slice(2,7),
       price: price,
-      img: photo,
-      time: new Date().toLocaleString("zh-CN",{month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit"})
+      img: imgURL,
+      time: new Date().toLocaleString("zh-CN",{month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit"}),
+      kind: "spend"
     });
     save();
+    photo.url = "";
     closeSheet(document.getElementById("sheetBuy"));
     flyAway(price);
-    toast("🛒", amtSpan(price, "花掉"), "还剩 " + fmt(balance()));
+    if(imgURL){ toast("🛒", amtSpan(price, "花掉") + '<div style="font-size:11.5px;opacity:.8;margin-top:4px">已存照片</div>', "还剩 " + fmt(balance())); }
+    else      { toast("🛒", amtSpan(price, "花掉"), "还剩 " + fmt(balance())); }
     renderAll(true);
     setTimeout(confetti, 280);
   });
 
   function flyAway(amountFen){
     var els = moneyWrap.querySelectorAll(".note,.coin,.jiao,.fen");
-    // 按金额大小决定飞走几个
     var n = Math.min(8, Math.max(2, Math.round(amountFen / 300) + 1));
     for(var i=0;i<n && i<els.length;i++){
       (function(el, idx){
@@ -1097,21 +1284,20 @@
       })(els[i], i);
     }
   }
+  /* ---------- 支付后让钞票飞走 ---------- */
 
-  /* ---------- 存钱 ---------- */
+  /* ---------- 存钱（先金额，照片可选） ---------- */
   var addPicked = {yuan:0, jiao:0, fen:0};
 
   function addFen(){ return addPicked.yuan*100 + addPicked.jiao*10 + addPicked.fen; }
 
   function buildAddPickers(){
-    ["addPreview"].forEach(function(id){
-      var box = document.getElementById(id);
-      var t = addFen();
-      box.innerHTML = t === 0 ? '<span class="empty-sum">点下面选金额</span>' : fmtHTML(t, true);
-    });
+    var box = document.getElementById("addPreview");
+    var t = addFen();
+    box.innerHTML = t === 0 ? '<span class="empty-sum">点下面选金额</span>' : fmtHTML(t, true);
     [["addYuan", YUAN_OPTS, "yuan","yuan"],["addJiao", JIAO_OPTS, "jiao","jiao"],["addFen", FEN_OPTS, "fen","fen"]].forEach(function(cfg){
-      var box = document.getElementById(cfg[0]);
-      box.innerHTML = "";
+      var boxEl = document.getElementById(cfg[0]);
+      boxEl.innerHTML = "";
       cfg[1].forEach(function(v){
         var b = document.createElement("button");
         b.className = "chip";
@@ -1122,29 +1308,61 @@
         if(addPicked[cfg[3]] === v) b.classList.add("sel");
         b.addEventListener("click", function(){
           addPicked[cfg[3]] = v;
-          box.querySelectorAll(".chip").forEach(function(x){ x.classList.remove("sel"); });
+          boxEl.querySelectorAll(".chip").forEach(function(x){ x.classList.remove("sel"); });
           b.classList.add("sel");
           var t = addFen();
           document.getElementById("addPreview").innerHTML =
             t === 0 ? '<span class="empty-sum">点下面选金额</span>' : fmtHTML(t, true);
         });
-        box.appendChild(b);
+        boxEl.appendChild(b);
       });
     });
   }
 
   document.getElementById("btnAdd").addEventListener("click", function(){
     addPicked = {yuan:0, jiao:0, fen:0};
+    photo.url = null;
+    photo.thumbEl = document.getElementById("addThumb");   // 缩略图指向「存钱」这格
+    paintThumb();
+    stopCamera();
     buildAddPickers();
     openSheet("sheetAdd");
   });
+
+  /* 存钱面板：拍照 / 相册都是可选项，缩略图画到 addThumb */
+  document.getElementById("btnAddCam").addEventListener("click", function(){ startCamera("add"); });
+  document.getElementById("btnAddShot").addEventListener("click", function(){
+    if(!stream){ startCamera("add"); return; }
+    bindAddPhoto(function(){ setPhoto(shootFromActive()); });
+  });
+  document.getElementById("btnAddFile").addEventListener("click", function(){
+    document.getElementById("addFileInput").click();
+  });
+  document.getElementById("addFileInput").addEventListener("change", function(e){
+    var f = e.target.files && e.target.files[0];
+    e.target.value = "";
+    if(f) bindAddPhoto(function(){ processFile(f); });
+  });
+  document.getElementById("btnAddClearPhoto").addEventListener("click", function(){
+    stopCamera(); clearPhoto(); toast("🗑","照片删掉了","这次不拍照也行");
+  });
+
   document.getElementById("btnConfirmAdd").addEventListener("click", function(){
     var p = addFen();
-    if(p <= 0){ toast("🪙","选个金额"); return; }
-    state.added += p;
+    if(p <= 0){ toast("🪙","选个金额","这一步必填哦"); return; }
+    var imgURL = photo.url || "";
+    state.deposits.push({
+      id: Date.now() + "_" + Math.random().toString(36).slice(2,7),
+      price: p,
+      img: imgURL,
+      time: new Date().toLocaleString("zh-CN",{month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit"})
+    });
     save();
+    photo.url = "";
+    clearPhoto();
     closeSheet(document.getElementById("sheetAdd"));
-    toast("🎁", amtSpan(p, "存入"), "现在有 " + fmt(balance()));
+    if(imgURL) toast("🎁", amtSpan(p, "存入") + '<div style="font-size:11.5px;opacity:.8;margin-top:4px">已存照片</div>', "现在有 " + fmt(balance()));
+    else       toast("🎁", amtSpan(p, "存入"), "现在有 " + fmt(balance()));
     renderAll(true); confetti();
   });
 
@@ -1152,21 +1370,47 @@
   document.getElementById("btnBuy").addEventListener("click", function(){
     resetBuy();
     openSheet("sheetBuy");
-    startCamera();
   });
 
   /* ---------- 历史 ---------- */
   var historyBox = document.getElementById("historyBox");
+  var histTab = "all";
+
+  document.querySelectorAll("#histSeg button").forEach(function(b){
+    b.addEventListener("click", function(){
+      document.querySelectorAll("#histSeg button").forEach(function(x){ x.classList.remove("on"); });
+      b.classList.add("on");
+      histTab = b.dataset.tab;
+      renderHistory();
+    });
+  });
+
   function renderHistory(){
-    if(!state.items.length){
+    var all = allRecords();
+    var spends = all.filter(function(x){ return x.kind === "spend"; });
+    var ins    = all.filter(function(x){ return x.kind === "in"; });
+
+    if(histTab === "spend" && !spends.length){
       historyBox.innerHTML = '<div class="none-txt"><span class="big">🛍️</span>还没有买过东西</div>';
       return;
     }
+    if(histTab === "in" && !ins.length){
+      historyBox.innerHTML = '<div class="none-txt"><span class="big">🫙</span>还没有存过钱</div>';
+      return;
+    }
+    if(histTab === "all" && !all.length){
+      historyBox.innerHTML = '<div class="none-txt"><span class="big">🧾</span>还没有记录<br>点下面的按钮开始吧</div>';
+      return;
+    }
+
+    var list = histTab === "spend" ? spends : (histTab === "in" ? ins : all);
     var maxP = 0;
-    state.items.forEach(function(it){ if(it.price > maxP) maxP = it.price; });
+    list.forEach(function(it){ if(it.price > maxP) maxP = it.price; });
+
     var g = document.createElement("div");
     g.className = "hist-grid";
-    state.items.forEach(function(it){
+    list.forEach(function(it){
+      var isIn = it.kind === "in";
       var d = document.createElement("div");
       d.className = "hist";
       var w = maxP > 0 ? Math.max(12, it.price / maxP * 100) : 12;
@@ -1176,20 +1420,33 @@
       if(p.jiao) tagTxt += p.jiao + '<small>角</small>';
       if(p.fen)  tagTxt += p.fen  + '<small>分</small>';
       if(!tagTxt) tagTxt = "0";
+
+      var media = it.img
+        ? '<img src="'+it.img+'" alt="">'
+        : '<div class="ph">'+(isIn ? "🫙" : "🛍️")+'</div>';
+
       d.innerHTML =
-        '<img src="'+it.img+'" alt="">'+
-        '<div class="tag">'+tagTxt+'</div>'+
-        '<div class="hbar" style="width:'+w+'%"></div>'+
+        media +
+        '<div class="tag'+(isIn ? ' in' : '')+'">'+tagTxt+'</div>'+
+        '<div class="hbar'+(isIn ? ' in' : '')+'" style="width:'+w+'%"></div>'+
         '<button class="del">🗑</button>';
       d.querySelector(".del").addEventListener("click", function(ev){
         ev.stopPropagation();
-        if(!confirm("删除这条？钱会退回来")) return;
-        var idx = -1;
-        for(var i=0;i<state.items.length;i++){ if(state.items[i].id === it.id){ idx = i; break; } }
+        if(!confirm("删除这条？金额会退回来")) return;
+        var i, idx = -1;
+        for(i=0;i<state.items.length;i++){ if(state.items[i].id === it.id){ idx = i; break; } }
         if(idx >= 0){
-          var back = state.items[idx].price;
           state.items.splice(idx, 1);
           save();
+        }else{
+          idx = -1;
+          for(i=0;i<state.deposits.length;i++){ if(state.deposits[i].id === it.id){ idx = i; break; } }
+          if(idx >= 0){
+            state.deposits.splice(idx, 1);
+            save();
+          }
+        }
+        if(idx >= 0){
           renderAll(true); renderHistory();
           toast("↩️","退回来了","现在有 " + fmt(balance()));
         }
@@ -1218,7 +1475,7 @@
   ring.setAttribute("stroke-dashoffset", "0");
   load();
   renderAll(false);
-  if(!state.items.length && state.added === 0){
+  if(!state.items.length && state.added === 0 && !state.deposits.length){
     setTimeout(function(){ toast("👋","点下面开始吧"); }, 600);
   }
   document.addEventListener("gesturestart", function(e){ e.preventDefault(); });
