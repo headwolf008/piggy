@@ -1,0 +1,12 @@
+{
+  "name": "piggy",
+  "version": "1.0.0",
+  "private": true,
+  "description": "小朋友的存钱罐 · 教学版（真人民币图版 / 小猪满度 / 可改可删记账）",
+  "scripts": {
+    "test": "node tests/piggy.test.js"
+  },
+  "devDependencies": {
+    "jsdom": "^30.1.1"
+  }
+}

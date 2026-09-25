@@ -44,31 +44,59 @@
     display:flex;align-items:center;gap:14px;
     max-width:560px;margin:0 auto;
   }
-  /* 环形进度 */
-  .ring-wrap{position:relative;width:96px;height:96px;flex-shrink:0}
-  .ring-wrap svg{width:100%;height:100%;transform:rotate(-90deg);display:block}
-  .ring-bg{fill:none;stroke:#F1E4CE;stroke-width:13}
-  .ring-fg{
-    fill:none;stroke:url(#ringGrad);stroke-width:13;stroke-linecap:round;
-    transition:stroke-dashoffset .7s cubic-bezier(.4,0,.2,1);
+  /* ============ 小猪存钱罐（满度 = 还剩多少钱） ============ */
+  .piggy-wrap{
+    position:relative;width:138px;height:122px;flex-shrink:0;
+    padding:0;border:none;background:none;font-family:inherit;cursor:pointer;
+    display:block;line-height:0;-webkit-tap-highlight-color:transparent;
   }
-  .ring-center{
-    position:absolute;inset:0;display:flex;flex-direction:column;
-    align-items:center;justify-content:center;
+  .piggy-wrap svg{width:100%;height:100%;display:block;overflow:visible}
+  .piggy-wrap:active{transform:scale(.96)}
+  .piggy-wrap.jiggle svg{animation:jiggle .55s ease}
+  @keyframes jiggle{0%,100%{transform:rotate(0)}20%{transform:rotate(-8deg) }55%{transform:rotate(8deg)}}
+  #pigLiquid{transition:transform .85s cubic-bezier(.4,0,.2,1)}
+  #pigCash g{transition:opacity .6s}
+  .pig-lvl{
+    position:absolute;left:50%;bottom:-4px;transform:translateX(-50%);
+    background:rgba(255,255,255,.95);border-radius:11px;
+    padding:3px 9px;font-size:12.5px;font-weight:900;color:var(--red);
+    line-height:1.4;box-shadow:0 3px 9px rgba(74,55,40,.2);
+    white-space:nowrap;pointer-events:none;
   }
-  .ring-yuan{
-    font-size:27px;font-weight:900;color:var(--red);line-height:1;
-    font-variant-numeric:tabular-nums;letter-spacing:-1.5px;
-    transition:transform .2s cubic-bezier(.34,1.56,.64,1);
-  }
-  .ring-yuan.pop{transform:scale(1.22)}
-  .ring-unit{font-size:12px;font-weight:800;color:var(--red);opacity:.75;margin-top:1px}
+  .pig-lvl.full{color:#2E7D32;background:#E8F5E9}
+  .pig-lvl b{font-size:15px;font-variant-numeric:tabular-nums}
 
-  .head-right{flex:1;min-width:0;display:flex;flex-direction:column;gap:8px}
+  .head-right{flex:1;min-width:0;display:flex;flex-direction:column;gap:7px}
   .mood-line{display:flex;align-items:center;gap:8px}
   .piggy{font-size:26px;line-height:1;animation:bob 2.6s ease-in-out infinite}
   @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
   .mood{font-size:25px;line-height:1;animation:bob 2.2s ease-in-out infinite}
+
+  /* 余额大字 */
+  .bal-line{display:flex;align-items:baseline;gap:6px}
+  .bal-line .lb{font-size:12px;font-weight:900;color:#8D6E63}
+  .bal-num{
+    font-size:31px;font-weight:900;color:var(--red);line-height:1;
+    font-variant-numeric:tabular-nums;letter-spacing:-1.5px;
+    transition:transform .2s cubic-bezier(.34,1.56,.64,1);
+  }
+  .bal-num.pop{transform:scale(1.2)}
+  .bal-line .u{font-size:13px;font-weight:900;color:var(--red);opacity:.7}
+
+  .pig-sub{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+  .pig-sub .t{font-size:11.5px;font-weight:800;color:#8D6E63;line-height:1.3}
+  .pig-sub .t b{color:var(--jiao);font-variant-numeric:tabular-nums}
+  .mini-btn{
+    border:none;background:#F1E4CE;color:#6D4C41;font-family:inherit;
+    font-size:11px;font-weight:900;border-radius:9px;padding:4px 8px;cursor:pointer;
+    display:flex;align-items:center;gap:3px;flex-shrink:0;
+  }
+  .mini-btn:active{transform:scale(.94)}
+  .book-btn{
+    width:34px;height:34px;border-radius:50%;border:none;background:#F1E4CE;
+    color:#6D4C41;font-size:17px;cursor:pointer;font-family:inherit;flex-shrink:0;
+    display:flex;align-items:center;justify-content:center;
+  }
 
   /* 元角分 三段显示 */
   .yjf{display:flex;align-items:stretch;gap:5px;flex-wrap:nowrap}
@@ -89,30 +117,10 @@
   .u-fen  .v{color:var(--fen)}
   .unit-box.zero{opacity:.3}
 
-  /* 横向对比条 */
-  .cmp-bar{
-    display:flex;height:26px;border-radius:8px;overflow:hidden;
-    box-shadow:inset 0 2px 5px rgba(74,55,40,.13);background:#F1E4CE;
-  }
-  .cmp-left{
-    background:linear-gradient(90deg,#FFD54F,#FF9F43);
-    display:flex;align-items:center;justify-content:center;
-    transition:width .7s cubic-bezier(.4,0,.2,1);
-    min-width:0;overflow:hidden;position:relative;
-  }
-  .cmp-right{
-    background:linear-gradient(90deg,#8D6E63,#6D4C41);
-    display:flex;align-items:center;justify-content:center;
-    transition:width .7s cubic-bezier(.4,0,.2,1);
-    min-width:0;overflow:hidden;position:relative;
-  }
-  .cmp-left::after,.cmp-right::after{
-    content:"";position:absolute;inset:0;
-    background:repeating-linear-gradient(115deg,rgba(255,255,255,.22) 0 9px,transparent 9px 20px);
-  }
-  .cmp-ico{font-size:14px;z-index:2}
-
   /* ============ 钞票墙 ============ */
+  .sprite{position:absolute;width:0;height:0;overflow:hidden}
+  .bk,.cn{display:block;width:100%;height:100%;border-radius:8px}
+  .cn{border-radius:50%}
   .stage{
     padding:18px 12px 12px;width:100%;max-width:900px;margin:0 auto;
     flex:1 1 auto;display:flex;align-items:flex-start;justify-content:center;
@@ -124,70 +132,89 @@
     gap:9px 10px;width:100%;
   }
 
-  /* 元票（大） */
+  /* 真钞票图版（SVG） */
   .note{
     position:relative;border-radius:9px;
     box-shadow:0 4px 0 rgba(74,55,40,.16),0 7px 14px rgba(74,55,40,.12);
     display:flex;align-items:center;justify-content:center;
     overflow:hidden;transition:transform .5s cubic-bezier(.5,-0.3,.7,.5),opacity .5s;
     animation:noteIn .4s cubic-bezier(.34,1.4,.64,1) both;
+    line-height:0;
   }
   @keyframes noteIn{from{transform:scale(.3) rotate(-14deg);opacity:0}to{transform:scale(1) rotate(0);opacity:1}}
   .note.gone,.coin.gone,.jiao.gone,.fen.gone{transform:translate(70px,-160px) rotate(40deg) scale(.4);opacity:0}
-  .note .denom{font-weight:900;letter-spacing:-1px;z-index:2;text-shadow:0 1px 2px rgba(0,0,0,.18)}
-  .note .cny{position:absolute;top:4px;left:6px;font-size:10px;font-weight:900;opacity:.75;z-index:2}
-  .note .pattern{
-    position:absolute;inset:0;opacity:.2;z-index:1;
-    background:
-      radial-gradient(circle at 18% 30%,rgba(255,255,255,.9) 0 4px,transparent 5px),
-      radial-gradient(circle at 82% 70%,rgba(255,255,255,.75) 0 3px,transparent 4px),
-      repeating-linear-gradient(45deg,rgba(255,255,255,.35) 0 3px,transparent 3px 9px);
-  }
-  .note[data-v="100"]{width:140px;height:63px;background:linear-gradient(135deg,#F48FB1,#E57399 60%,#D81B60);color:#fff;font-size:25px}
-  .note[data-v="50"] {width:124px;height:58px;background:linear-gradient(135deg,#81C784,#4CAF50 60%,#2E7D32);color:#fff;font-size:23px}
-  .note[data-v="10"] {width:106px;height:52px;background:linear-gradient(135deg,#64B5F6,#2196F3 60%,#1565C0);color:#fff;font-size:21px}
-  .note[data-v="5"]  {width:94px;height:47px;background:linear-gradient(135deg,#BA9BE0,#9575CD 60%,#5E35B1);color:#fff;font-size:19px}
+  .note[data-v="100"]{width:140px;height:63px}
+  .note[data-v="50"] {width:124px;height:58px}
+  .note[data-v="20"] {width:114px;height:53px}
+  .note[data-v="10"] {width:106px;height:52px}
+  .note[data-v="5"]  {width:94px;height:47px}
+  .note[data-v="1"]  {width:86px;height:44px}
   .note.more{
-    width:106px;height:52px;background:linear-gradient(135deg,#F5F5F5,#E0E0E0);
-    color:#6D4C41;font-size:18px;border:2px dashed #BCAAA4;
+    width:106px;height:52px;background:#F5F0E4;
+    color:#6D4C41;font-size:16px;font-weight:900;line-height:1.3;
+    border:2px dashed #BCAAA4;
   }
+  .note.more span{display:flex;align-items:center;justify-content:center;height:100%}
 
-  /* 元硬币 */
-  .coin{
-    width:52px;height:52px;border-radius:50%;
-    background:radial-gradient(circle at 34% 30%,#FFE082,#FFC107 45%,#F5A623);
-    color:#7A4F01;font-size:17px;font-weight:900;
-    box-shadow:0 3px 0 #D68F14,0 6px 11px rgba(74,55,40,.2),inset 0 0 0 4px rgba(255,255,255,.32);
-    display:flex;align-items:center;justify-content:center;flex-direction:column;
-    transition:transform .5s cubic-bezier(.5,-0.3,.7,.5),opacity .5s;
-    animation:noteIn .4s cubic-bezier(.34,1.4,.64,1) both;
-    line-height:1;
-  }
-  .coin small{font-size:9px;font-weight:800;opacity:.8;margin-top:1px}
-
-  /* 角币（青绿，中等） */
-  .jiao{
-    width:46px;height:46px;border-radius:50%;
-    background:radial-gradient(circle at 34% 30%,#80CBC4,#26A69A 48%,#00897B);
-    color:#fff;font-size:16px;font-weight:900;
-    box-shadow:0 3px 0 #00796B,0 5px 10px rgba(74,55,40,.18),inset 0 0 0 3px rgba(255,255,255,.3);
-    display:flex;align-items:center;justify-content:center;flex-direction:column;
-    transition:transform .5s cubic-bezier(.5,-0.3,.7,.5),opacity .5s;
-    animation:noteIn .4s cubic-bezier(.34,1.4,.64,1) both;
-    line-height:1;
-  }
-  .jiao small{font-size:9px;font-weight:800;opacity:.9;margin-top:1px}
-
-  /* 分币（棕铜色，最小） */
-  .fen{
-    width:34px;height:34px;border-radius:50%;
-    background:radial-gradient(circle at 34% 30%,#D7CCC8,#A1887F 50%,#795548);
-    color:#fff;font-size:13px;font-weight:900;
-    box-shadow:0 2px 0 #5D4037,0 4px 7px rgba(74,55,40,.16),inset 0 0 0 2px rgba(255,255,255,.28);
+  /* 硬币 */
+  .coin,.jiao,.fen{
+    border-radius:50%;line-height:0;
+    box-shadow:0 3px 0 rgba(74,55,40,.16),0 6px 11px rgba(74,55,40,.2);
     display:flex;align-items:center;justify-content:center;
     transition:transform .5s cubic-bezier(.5,-0.3,.7,.5),opacity .5s;
     animation:noteIn .4s cubic-bezier(.34,1.4,.64,1) both;
   }
+  .coin{width:52px;height:52px}
+  .jiao{width:46px;height:46px}
+  .fen{width:34px;height:34px}
+
+  /* 小尺寸货币图（选项/预览/图鉴里用） */
+  .mini-cash{display:flex;flex-wrap:wrap;gap:3px;align-items:center;justify-content:center;line-height:0}
+  .mini-cash .q{font-size:11px;font-weight:900;color:#8D6E63;margin-left:1px}
+  .chip .ci{
+    width:46px;height:21px;border-radius:4px;overflow:hidden;
+    box-shadow:0 2px 4px rgba(74,55,40,.2);line-height:0;
+  }
+  .chip .ci.cn{width:20px;height:20px;border-radius:50%}
+  .chip .cv{display:flex;align-items:baseline;gap:2px;font-size:15px;line-height:1}
+  .chip .cv small{font-size:10px;font-weight:800;opacity:.75}
+  .cash-row{
+    display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:4px;
+    margin-top:7px;line-height:0;min-height:0;
+  }
+  .cash-row .it{width:34px;height:15px;border-radius:3px;overflow:hidden;box-shadow:0 1px 3px rgba(74,55,40,.22)}
+  .cash-row .it.cn{width:15px;height:15px;border-radius:50%}
+  .cash-row .plus{font-size:11px;font-weight:900;color:#D7CCC8}
+
+  /* 货币图鉴 */
+  .book-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+  .bk-card{
+    background:#FFF8E7;border-radius:15px;padding:10px;
+    display:flex;align-items:center;gap:10px;box-shadow:0 3px 10px rgba(74,55,40,.1);
+  }
+  .bk-card .img{width:86px;flex-shrink:0;line-height:0}
+  .bk-card .img .note,.bk-card .img .coin,.bk-card .img .jiao,.bk-card .img .fen{
+    box-shadow:none;animation:none;width:100%;height:auto;
+  }
+  .bk-card .t1{font-size:16px;font-weight:900;color:var(--ink)}
+  .bk-card .t2{font-size:11px;font-weight:800;color:#8D6E63;margin-top:2px;line-height:1.5}
+  .bk-head{
+    font-size:12.5px;font-weight:900;color:#E65100;background:#FFF3E0;
+    border-radius:11px;padding:8px 11px;margin-bottom:11px;line-height:1.6;
+  }
+
+  /* 历史卡片上的修改/删除 */
+  .hist .acts{
+    position:absolute;bottom:5px;right:5px;display:flex;gap:5px;
+  }
+  .hist .acts button{
+    width:28px;height:28px;border-radius:50%;border:none;color:#fff;
+    font-size:13px;cursor:pointer;font-family:inherit;line-height:1;
+    display:flex;align-items:center;justify-content:center;
+    box-shadow:0 2px 6px rgba(74,55,40,.35);
+  }
+  .hist .acts .ed{background:rgba(255,159,67,.96)}
+  .hist .acts .dl{background:rgba(74,55,40,.8)}
   /* 分组标签 */
   .grp{
     width:100%;display:flex;align-items:center;gap:8px;
@@ -252,6 +279,7 @@
   .echo .ev{font-size:19px;font-weight:900;line-height:1;color:var(--red)}
   .echo .p{font-size:15px;margin-right:2px}
 
+  .sheet input{user-select:auto;-webkit-user-select:auto;font-size:16px}
   .sheet-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:13px}
   .sheet-title{font-size:18px;font-weight:900;display:flex;align-items:center;gap:7px}
   .close-x{
@@ -331,12 +359,13 @@
   .d-fen{background:var(--fen)}
   .chips{display:flex;flex-wrap:wrap;gap:8px}
   .chip{
-    border:none;border-radius:13px;padding:10px 14px;cursor:pointer;
-    font-family:inherit;font-weight:900;font-size:17px;
+    border:none;border-radius:13px;padding:6px 11px 8px;cursor:pointer;
+    font-family:inherit;font-weight:900;font-size:14px;
     font-variant-numeric:tabular-nums;
     transition:transform .12s,box-shadow .12s;
-    display:flex;align-items:baseline;gap:3px;
+    display:flex;flex-direction:column;align-items:center;gap:4px;line-height:1;
   }
+  .chip.noimg{flex-direction:row;align-items:baseline;padding:10px 14px;font-size:17px}
   .chip small{font-size:11px;font-weight:800;opacity:.75}
   .chip:active{transform:translateY(2px);box-shadow:none}
   .c-yuan{background:#FCE4EC;color:#C2185B;box-shadow:0 4px 0 #F8BBD0}
@@ -444,59 +473,92 @@
   .ios-tip .ic{font-size:20px;flex-shrink:0}
 
   @media(max-width:380px){
-    .ring-wrap{width:82px;height:82px}
-    .ring-yuan{font-size:23px}
+    .piggy-wrap{width:112px;height:100px}
+    .bal-num{font-size:26px}
     .unit-box .v{font-size:20px}
     .unit-box{padding:3px 7px}
-    .note[data-v="100"]{width:122px;height:55px;font-size:22px}
-    .note[data-v="50"]{width:108px;height:50px;font-size:20px}
-    .note[data-v="10"]{width:92px;height:45px;font-size:18px}
-    .note[data-v="5"]{width:82px;height:41px;font-size:17px}
-    .coin{width:46px;height:46px;font-size:15px}
-    .jiao{width:40px;height:40px;font-size:14px}
-    .fen{width:30px;height:30px;font-size:11px}
+    .note[data-v="100"]{width:122px;height:55px}
+    .note[data-v="50"]{width:108px;height:50px}
+    .note[data-v="20"]{width:100px;height:47px}
+    .note[data-v="10"]{width:92px;height:45px}
+    .note[data-v="5"]{width:82px;height:41px}
+    .note[data-v="1"]{width:76px;height:39px}
+    .coin{width:46px;height:46px}
+    .jiao{width:40px;height:40px}
+    .fen{width:30px;height:30px}
     .thumb{width:66px;height:66px}
+    .chip .ci{width:40px;height:18px}
   }
 </style>
 </head>
 <body>
+<!-- 人民币图版（JS 生成后放进这里） -->
+<svg class="sprite" id="sprite" aria-hidden="true"></svg>
 
 <!-- ========== 顶部 ========== -->
 <div class="header">
   <div class="head-grid">
-    <div class="ring-wrap">
-      <svg viewBox="0 0 120 120">
+    <button class="piggy-wrap" id="piggyBox" aria-label="小猪存钱罐">
+      <svg viewBox="0 0 200 172">
         <defs>
-          <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stop-color="#FFD54F"/>
-            <stop offset="55%" stop-color="#FF9F43"/>
-            <stop offset="100%" stop-color="#E8453C"/>
+          <clipPath id="pigClip"><ellipse cx="100" cy="100" rx="70" ry="52"/></clipPath>
+          <linearGradient id="pigFill" x1="0" y1="1" x2="0" y2="0">
+            <stop offset="0" stop-color="#FFA000"/>
+            <stop offset="1" stop-color="#FFE082"/>
+          </linearGradient>
+          <linearGradient id="pigSkin" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#FFC9D4"/>
+            <stop offset="1" stop-color="#F48FB1"/>
           </linearGradient>
         </defs>
-        <circle class="ring-bg" cx="60" cy="60" r="51"/>
-        <circle class="ring-fg" id="ring" cx="60" cy="60" r="51"/>
+        <rect x="60" y="134" width="28" height="30" rx="12" fill="#EC407A"/>
+        <rect x="112" y="134" width="28" height="30" rx="12" fill="#EC407A"/>
+        <path d="M170 96 q18 -12 9 -22 q-7 -8 -15 -1" fill="none" stroke="#EC407A" stroke-width="8" stroke-linecap="round"/>
+        <path d="M62 64 q-8 -28 17 -23 q11 2 9 18z" fill="#E91E63"/>
+        <path d="M138 64 q8 -28 -17 -23 q-11 2 -9 18z" fill="#E91E63"/>
+        <ellipse cx="100" cy="100" rx="70" ry="52" fill="url(#pigSkin)"/>
+        <g clip-path="url(#pigClip)">
+          <g id="pigLiquid" transform="translate(0,152)">
+            <path d="M16,0 q7,-9 14,0 t14,0 t14,0 t14,0 t14,0 t14,0 t14,0 t14,0 t14,0 t14,0 t14,0 t14,0 L188,175 L16,175 Z"
+                  fill="url(#pigFill)" opacity=".93"/>
+          </g>
+          <g id="pigCash"></g>
+        </g>
+        <ellipse cx="100" cy="104" rx="31" ry="21" fill="#FF9EB5" stroke="#EC407A" stroke-width="2"/>
+        <ellipse cx="92" cy="102" rx="4" ry="5.5" fill="#AD1457"/>
+        <ellipse cx="108" cy="102" rx="4" ry="5.5" fill="#AD1457"/>
+        <ellipse cx="70" cy="88" rx="8" ry="5" fill="#F48FB1" opacity=".75"/>
+        <ellipse cx="130" cy="88" rx="8" ry="5" fill="#F48FB1" opacity=".75"/>
+        <circle cx="75" cy="83" r="4.6" fill="#4A3728"/>
+        <circle cx="125" cy="83" r="4.6" fill="#4A3728"/>
+        <circle cx="76.6" cy="81.4" r="1.6" fill="#fff"/>
+        <circle cx="126.6" cy="81.4" r="1.6" fill="#fff"/>
+        <rect x="79" y="50" width="42" height="9" rx="4.5" fill="#4A3728" opacity=".85"/>
+        <rect x="81" y="51" width="38" height="3" rx="1.5" fill="#fff" opacity=".35"/>
       </svg>
-      <div class="ring-center">
-        <div class="ring-yuan" id="ringYuan">200</div>
-        <div class="ring-unit">元</div>
-      </div>
-    </div>
+      <span class="pig-lvl" id="pigLvl">0%</span>
+    </button>
 
     <div class="head-right">
       <div class="mood-line">
         <span class="piggy">🐷</span>
         <span class="mood" id="moodIco">😄</span>
+        <button class="book-btn" id="btnBook" title="认认人民币">📚</button>
+      </div>
+      <div class="bal-line">
+        <span class="lb">还剩</span>
+        <span class="bal-num" id="balNum">200</span>
+        <span class="u" id="balUnit">元</span>
       </div>
       <div class="yjf">
         <div class="unit-box u-yuan" id="boxYuan"><span class="v">200</span><span class="u">元</span></div>
         <div class="unit-box u-jiao zero" id="boxJiao"><span class="v">0</span><span class="u">角</span></div>
         <div class="unit-box u-fen zero" id="boxFen"><span class="v">0</span><span class="u">分</span></div>
       </div>
-      <div class="cmp-bar">
-        <div class="cmp-left" id="cmpLeft" style="width:100%">
-          <span class="cmp-ico">💰</span>
-        </div>
-        <div class="cmp-right" id="cmpRight" style="width:0%"></div>
+      <div class="pig-sub">
+        <span class="t" id="pigSub">装满 200 元就满啦</span>
+        <button class="mini-btn" id="btnGoal">🎯 目标</button>
+        <button class="mini-btn" id="btnHistory">🧾 记账</button>
       </div>
     </div>
   </div>
@@ -672,6 +734,92 @@
   </div>
 </div>
 
+<!-- ========== 修改已登记的记录 ========== -->
+<div class="sheet" id="sheetEdit">
+  <div class="sheet-body">
+    <div class="sheet-head">
+      <div class="sheet-title" id="editTitle">✏️ 改一改</div>
+      <button class="close-x" data-close>✕</button>
+    </div>
+    <div class="sum-preview" id="editPreview"></div>
+    <div class="pick-block">
+      <div class="pick-head"><span class="dot d-yuan"></span>元</div>
+      <div class="chips" id="editYuan"></div>
+    </div>
+    <div class="pick-block">
+      <div class="pick-head"><span class="dot d-jiao"></span>角</div>
+      <div class="chips" id="editJiao"></div>
+    </div>
+    <div class="pick-block">
+      <div class="pick-head"><span class="dot d-fen"></span>分</div>
+      <div class="chips" id="editFen"></div>
+    </div>
+
+    <div class="pick-head" style="color:#E65100">📸 照片（换了也行，不换就留着）</div>
+    <div class="cam-box" id="camBoxEdit" style="display:none">
+      <video id="videoEdit" autoplay playsinline muted></video>
+      <div class="cam-ph" id="camPhEdit">
+        <span class="big-ico">📷</span>
+        <span>点下面「相机」开摄像头<br>不想换就点「💾 保存修改」</span>
+      </div>
+    </div>
+    <div class="photo-row">
+      <div class="thumb" id="editThumb">还没拍照</div>
+      <div class="photo-btns">
+        <button class="mini mini-o" id="btnEditCam">📷 相机</button>
+        <button class="mini mini-g" id="btnEditShot" style="flex:1.4">拍下来</button>
+        <button class="mini mini-o" id="btnEditFile">🖼 从相册选</button>
+        <button class="mini mini-o" id="btnEditClearPhoto">删掉照片</button>
+      </div>
+    </div>
+    <input type="file" id="editFileInput" accept="image/*" style="display:none">
+
+    <div class="row2">
+      <button class="mini mini-o" id="btnEditDel" style="flex:.75;background:#FFEBEE;color:#C62828;box-shadow:0 4px 0 #EF9A9A">🗑 删除</button>
+      <button class="mini mini-r" id="btnEditSave" style="flex:1.6">💾 保存修改</button>
+    </div>
+    <div class="mini-note">改完金额，小猪的满度会跟着变哦</div>
+  </div>
+</div>
+
+<!-- ========== 存钱目标 ========== -->
+<div class="sheet" id="sheetGoal">
+  <div class="sheet-body">
+    <div class="sheet-head">
+      <div class="sheet-title">🎯 小猪想装多少</div>
+      <button class="close-x" data-close>✕</button>
+    </div>
+    <div class="bk-head">小猪<b>越满 = 手里的钱越多</b>。现在还剩 <b id="goalBal">—</b>，点一个数字当目标。</div>
+    <div class="chips" id="goalChips" style="gap:10px"></div>
+    <div class="pick-block" style="margin-top:15px">
+      <div class="pick-head">也可以自己填一个</div>
+      <div style="display:flex;gap:9px;margin-top:2px">
+        <input id="goalInput" type="number" inputmode="numeric" min="1" placeholder="填个整数字"
+          style="flex:1;min-width:0;border:2px solid #FFE0B2;border-radius:13px;padding:13px;
+                 font-size:20px;font-weight:900;font-family:inherit;text-align:center;color:var(--ink)">
+        <button class="mini mini-g" id="btnGoalSet" style="flex:.6">设定</button>
+      </div>
+    </div>
+    <div class="mini-note">目标只是一个「装满」的刻度，不影响真实金额哦</div>
+  </div>
+</div>
+
+<!-- ========== 货币图鉴 ========== -->
+<div class="sheet" id="sheetBook">
+  <div class="sheet-body">
+    <div class="sheet-head">
+      <div class="sheet-title">📖 认认人民币</div>
+      <button class="close-x" data-close>✕</button>
+    </div>
+    <div class="bk-head">下面都是真的人民币长相：看看面额、颜色和上面的汉字。</div>
+    <div class="book-grid" id="bookGrid"></div>
+    <div class="mini-note" style="margin-top:12px">
+      💡 纸币上面写着「中国人民银行」和「壹佰圆」；<br>
+      硬币边上有一圈小齿，是防伪用的。
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"><span class="e"></span><span id="toastText"></span></div>
 <div class="confetti" id="confetti"></div>
 
@@ -715,24 +863,248 @@
     return out;
   }
 
-  var YUAN_NOTES = [ {fen:10000,v:100}, {fen:5000,v:50}, {fen:1000,v:10}, {fen:500,v:5} ];
+  var YUAN_NOTES = [ {fen:10000,v:100}, {fen:5000,v:50}, {fen:2000,v:20}, {fen:1000,v:10}, {fen:500,v:5} ];
 
   function breakdown(fen){
     var r = Math.max(0, Math.round(fen));
-    var out = {n10000:0,n5000:0,n1000:0,n500:0,c100:0,j50:0,j10:0,f1:0};
+    var out = {n10000:0,n5000:0,n2000:0,n1000:0,n500:0,c100:0,j50:0,j10:0,f1:0};
     while(r >= 10000){ out.n10000++; r -= 10000; }
     while(r >= 5000){ out.n5000++; r -= 5000; }
-    while(r >= 1000){ out.n1000++; r -= 1000; }
-    while(r >= 500){ out.n500++; r -= 500; }
-    while(r >= 100){ out.c100++; r -= 100; }
+    while(r >= 2000){ out.n2000++;  r -= 2000; }
+    while(r >= 1000){ out.n1000++;  r -= 1000; }
+    while(r >= 500){ out.n500++;    r -= 500; }
+    while(r >= 100){ out.c100++;    r -= 100; }
     while(r >= 50){ out.j50++; r -= 50; }
     while(r >= 10){ out.j10++; r -= 10; }
     out.f1 = r;
     return out;
   }
 
+  /* ============================================================
+     人民币图版：真钞票 / 真硬币（按真实版式手绘的 SVG）
+     纸币 viewBox 220x100，硬币 viewBox 60x60
+     ============================================================ */
+  var F_CJK = "'PingFang SC','Hiragino Sans GB','Heiti SC','Microsoft YaHei',sans-serif";
+  var F_NUM = "Georgia,'Times New Roman',serif";
+
+  var NOTES = {
+    100:{g:"gn100", cn:"壹佰圆", scene:"hall"   },
+     50:{g:"gn50",  cn:"伍拾圆", scene:"potala" },
+     20:{g:"gn20",  cn:"贰拾圆", scene:"lijiang"},
+     10:{g:"gn10",  cn:"壹拾圆", scene:"gorge"  },
+      5:{g:"gn5",   cn:"伍圆",   scene:"taishan"},
+      1:{g:"gn1",   cn:"壹圆",   scene:"xihu"   }
+  };
+  var COINS = {
+    100:{g:"gc100", big:"1", unit:"元"},
+     50:{g:"gc50",  big:"5", unit:"角"},
+     10:{g:"gc10",  big:"1", unit:"角"},
+      1: {g:"gc1",   big:"1", unit:"分"}
+  };
+  var GRAD = {
+    gn100:"#F7C2C2,#E0685B,#C1272D",
+    gn50 :"#ADD9A6,#46994A,#23602A",
+    gn20 :"#DFC39C,#A9713F,#67421F",
+    gn10 :"#A2CCF2,#2B79C5,#124F89",
+    gn5  :"#CCB7E7,#7C56B9,#4A2E79",
+    gn1  :"#D2DFAD,#7F9C46,#4B6422",
+    gc100:"#FBFBFC,#C7CCD3,#8A929A",
+    gc50 :"#FFEDB0,#E5A61F,#A46601",
+    gc10 :"#EAF2ED,#B6C5BF,#79877F",
+    gc1  :"#F4D8B6,#C68B4B,#885728"
+  };
+
+  var SCENE = {
+    /* 人民大会堂（100元） */
+    hall: function(){
+      return '<g fill="#fff">'+
+        '<rect x="106" y="50" width="94" height="4" opacity=".5"/>'+
+        '<rect x="112" y="54" width="82" height="4" opacity=".65"/>'+
+        '<rect x="116" y="38" width="6" height="17"/>'+
+        '<rect x="126" y="38" width="6" height="17" opacity=".93"/>'+
+        '<rect x="136" y="38" width="6" height="17" opacity=".86"/>'+
+        '<rect x="146" y="38" width="6" height="17" opacity=".79"/>'+
+        '<rect x="156" y="38" width="6" height="17" opacity=".71"/>'+
+        '<rect x="166" y="38" width="6" height="17" opacity=".63"/>'+
+        '<rect x="176" y="38" width="6" height="17" opacity=".55"/>'+
+        '<rect x="186" y="38" width="4" height="17" opacity=".48"/>'+
+        '<rect x="110" y="31" width="86" height="8" opacity=".9"/>'+
+        '<rect x="124" y="21" width="58" height="10" opacity=".95"/>'+
+        '<rect x="132" y="24" width="8" height="5" opacity=".75"/>'+
+        '<rect x="146" y="24" width="8" height="5" opacity=".75"/>'+
+        '<rect x="160" y="24" width="8" height="5" opacity=".75"/>'+
+        '<rect x="141" y="15" width="14" height="6" opacity=".65"/>'+
+        '<circle cx="169" cy="35" r="4.6" opacity=".85"/>'+
+      '</g>';
+    },
+    /* 布达拉宫（50元） */
+    potala: function(){
+      return '<g fill="#fff">'+
+        '<path d="M96 56 L120 28 L144 56 Z" opacity=".3"/>'+
+        '<rect x="122" y="42" width="62" height="14" opacity=".95"/>'+
+        '<rect x="128" y="34" width="50" height="8" opacity=".88"/>'+
+        '<path d="M133 34 L142 23 L151 34 Z" opacity=".8"/>'+
+        '<rect x="142" y="15" width="9" height="8" opacity=".7"/>'+
+        '<rect x="156" y="34" width="11" height="8" opacity=".85"/>'+
+        '<rect x="170" y="42" width="4" height="14" opacity=".85"/>'+
+        '<rect x="176" y="38" width="4" height="18" opacity=".85"/>'+
+        '<rect x="182" y="34" width="4" height="22" opacity=".85"/>'+
+        '<circle cx="184" cy="28" r="4" opacity=".75"/>'+
+        '<rect x="96" y="56" width="110" height="3" opacity=".5"/>'+
+      '</g>';
+    },
+    /* 桂林山水（20元） */
+    lijiang: function(){
+      return '<g fill="#fff">'+
+        '<path d="M106 57 L113 26 Q115 19 120 26 L125 57 Z" opacity=".8"/>'+
+        '<path d="M128 57 L137 17 Q139 10 145 17 L152 57 Z" opacity=".92"/>'+
+        '<path d="M154 57 L161 27 Q163 21 168 27 L174 57 Z" opacity=".82"/>'+
+        '<path d="M176 57 L182 33 Q184 27 189 33 L193 57 Z" opacity=".7"/>'+
+        '<rect x="102" y="55" width="112" height="4" opacity=".5"/>'+
+        '<path d="M118 60 q7 -4 14 0 t14 0 t14 0" stroke="#fff" stroke-width="1.8" fill="none" opacity=".45"/>'+
+        '<rect x="146" y="50" width="18" height="2.4" opacity=".8"/>'+
+        '<path d="M155 50 L152 42" stroke="#fff" stroke-width="1.6" opacity=".8"/>'+
+      '</g>';
+    },
+    /* 长江三峡（10元） */
+    gorge: function(){
+      return '<g fill="#fff">'+
+        '<path d="M102 55 L130 16 L137 55 Z" opacity=".8"/>'+
+        '<path d="M198 55 L172 18 L165 55 Z" opacity=".8"/>'+
+        '<rect x="98" y="53" width="104" height="5" opacity=".5"/>'+
+        '<path d="M104 61 q10 -3 20 0 t20 0 t20 0 t20 0 t20 0 t20 0" stroke="#fff" stroke-width="1.8" fill="none" opacity=".4"/>'+
+        '<circle cx="60" cy="30" r="8" opacity="0"/>'+
+        '<path d="M138 55 L152 41 L166 55 Z" opacity=".9"/>'+
+        '<path d="M150 41 L157 28 L164 41 Z" opacity=".7"/>'+
+      '</g>';
+    },
+    /* 泰山（5元） */
+    taishan: function(){
+      return '<g fill="#fff">'+
+        '<path d="M98 57 L130 18 L162 57 Z" opacity=".9"/>'+
+        '<path d="M120 57 L137 35 L154 57 Z" opacity=".4"/>'+
+        '<rect x="100" y="55" width="100" height="4" opacity=".55"/>'+
+        '<path d="M188 40 L190 55" stroke="#fff" stroke-width="2" opacity=".6"/>'+
+        '<rect x="105" y="42" width="2.4" height="13" opacity=".85"/>'+
+        '<path d="M98 44 L106 34 L114 44 Z" opacity=".85"/>'+
+      '</g>';
+    },
+    /* 杭州西湖（1元） */
+    xihu: function(){
+      return '<g fill="#fff">'+
+        '<circle cx="46" cy="30" r="9" opacity=".45"/>'+
+        '<path d="M106 56 q15 -15 30 0 z" opacity=".85"/>'+
+        '<rect x="104" y="53" width="108" height="4" opacity=".5"/>'+
+        '<path d="M104 61 q10 -3 20 0 t20 0 t20 0 t20 0 t20 0 t20 0" stroke="#fff" stroke-width="1.6" fill="none" opacity=".38"/>'+
+        '<rect x="166" y="36" width="2.4" height="17" opacity=".8"/>'+
+        '<path d="M160 39 q8 -11 16 0 z" opacity=".85"/>'+
+      '</g>';
+    }
+  };
+
+  function symbolDef(){
+    var s = "", k;
+    for(k in GRAD){
+      var c = GRAD[k].split(",");
+      s += '<linearGradient id="'+k+'" x1="0" y1="0" x2="1" y2="1">'+
+           '<stop offset="0" stop-color="'+c[0]+'"/><stop offset=".55" stop-color="'+c[1]+'"/>'+
+           '<stop offset="1" stop-color="'+c[2]+'"/></linearGradient>';
+    }
+    /* 钞票底纹（防伪细线 + 花纹），提升"真钞感" */
+    s += '<pattern id="bkTex" width="12" height="12" patternUnits="userSpaceOnUse">'+
+         '<path d="M0 12 L12 0" stroke="#fff" stroke-width=".8" opacity=".55"/>'+
+         '<circle cx="3" cy="3" r="1.3" fill="#fff" opacity=".5"/>'+
+         '<circle cx="9" cy="9" r="1" fill="#fff" opacity=".4"/></pattern>'+
+         '<pattern id="bkRos" width="30" height="30" patternUnits="userSpaceOnUse">'+
+         '<path d="M15 2 q13 13 0 26 q-13 -13 0 -26z" fill="none" stroke="#fff" stroke-width="1" opacity=".55"/></pattern>';
+    for(k in NOTES){
+      var n = NOTES[k];
+      s += '<symbol id="bk'+k+'" viewBox="0 0 220 100">'+
+        '<rect width="220" height="100" fill="url(#'+n.g+')"/>'+
+        '<rect width="220" height="100" fill="url(#bkTex)" opacity=".1"/>'+
+        '<rect x="2" y="2" width="216" height="96" fill="url(#bkRos)" opacity=".07"/>'+
+        /* 左侧水印（大圆 + 面额数字 + 券别汉字），独占左栏，不压主景 */
+        '<circle cx="40" cy="46" r="24" fill="#fff" opacity=".13"/>'+
+        '<circle cx="40" cy="46" r="19" fill="none" stroke="#fff" stroke-width="1.2" opacity=".3"/>'+
+        '<text x="40" y="54" font-family="'+F_NUM+'" font-size="17" font-weight="900" fill="#fff" opacity=".4" text-anchor="middle">'+k+'</text>'+
+        /* 主景：缩放进中景框 x68..143 / y26..56，避免与右侧面额打架 */
+        '<g transform="translate(-6,14) scale(.76)">'+SCENE[n.scene]()+'</g>'+
+        /* 右侧大字面额（独占右栏） */
+        '<text x="185" y="47" font-family="'+F_NUM+'" font-size="30" font-weight="900" fill="#fff" text-anchor="middle" opacity=".97">'+k+'</text>'+
+        '<text x="185" y="60" font-family="'+F_CJK+'" font-size="8" font-weight="900" fill="#fff" text-anchor="middle" opacity=".8">'+n.cn+'</text>'+
+        /* 底部行名带：浅色衬底，保证任何配色的主景上文字都读得清 */
+        '<rect x="3" y="74" width="214" height="23" fill="#fff" opacity=".17"/>'+
+        '<line x1="3" y1="74" x2="217" y2="74" stroke="#fff" stroke-width=".8" opacity=".35"/>'+
+        '<text x="10" y="89" font-family="'+F_CJK+'" font-size="8.6" font-weight="900" fill="#fff" opacity=".96">中国人民银行</text>'+
+        '<text x="210" y="90" font-family="'+F_CJK+'" font-size="11" font-weight="900" fill="#fff" opacity=".97" text-anchor="end">'+n.cn+'</text>'+
+        /* 冠字号码 */
+        '<text x="8" y="15" font-family="'+F_NUM+'" font-size="6.6" fill="#fff" opacity=".48">0521883A</text>'+
+        '<rect x="3" y="3" width="214" height="94" rx="4" fill="none" stroke="#fff" stroke-width="1.2" opacity=".34"/>'+
+      '</symbol>';
+    }
+    for(k in COINS){
+      var cc = COINS[k];
+      s += '<symbol id="cn'+k+'" viewBox="0 0 60 60">'+
+        '<circle cx="30" cy="30" r="29" fill="url(#'+cc.g+')"/>'+
+        '<circle cx="30" cy="30" r="27.5" fill="none" stroke="#fff" stroke-width="2.4" stroke-dasharray="2.2 3.4" opacity=".75"/>'+
+        '<circle cx="30" cy="30" r="21" fill="none" stroke="#000" stroke-width="1.3" opacity=".16"/>'+
+        '<text x="30" y="34" font-family="'+F_NUM+'" font-size="21" font-weight="900" fill="#000" opacity=".55" text-anchor="middle">'+cc.big+'</text>'+
+        '<text x="30" y="45" font-family="'+F_CJK+'" font-size="8" font-weight="900" fill="#000" opacity=".45" text-anchor="middle">'+cc.unit+'</text>'+
+        '<ellipse cx="21" cy="19" rx="10" ry="6.5" fill="#fff" opacity=".28"/>'+
+      '</symbol>';
+    }
+    return s;
+  }
+
+  function buildSprite(){
+    var sp = document.getElementById("sprite");
+    if(!sp) return;
+    sp.innerHTML = '<defs>' + symbolDef() + '</defs>';
+  }
+
+  /* 取一张货币图（SVG 片段）。纸币值和硬币值有几组是重复的，所以分开写清楚 */
+  function noteSvg(v){
+    return '<svg class="bk" viewBox="0 0 220 100"><use xlink:href="#bk'+v+'" href="#bk'+v+'" width="220" height="100"/></svg>';
+  }
+  function coinSvg(v){
+    return '<svg class="cn" viewBox="0 0 60 60"><use xlink:href="#cn'+v+'" href="#cn'+v+'" width="60" height="60"/></svg>';
+  }
+  /* "c" 表示 1 元硬币 */
+  function cashSvg(v){
+    if(v === "c") return coinSvg(100);
+    if(NOTES[v])  return noteSvg(v);
+    return coinSvg(v);
+  }
+  /* n 元应该拿哪张纸币来代表它 */
+  function yuanIcon(n){
+    if(n >= 50) return noteSvg(50);
+    if(n >= 20) return noteSvg(20);
+    if(n >= 10) return noteSvg(10);
+    return noteSvg(1);
+  }
+  /* 一笔金额由哪些钱组成（教学用的一排图） */
+  function cashRowHTML(fen, max){
+    max = max || 8;
+    var bk = breakdown(Math.max(0, fen));
+    var parts = [[bk.n10000,100],[bk.n5000,50],[bk.n2000,20],[bk.n1000,10],[bk.n500,5],[bk.c100,"c"],[bk.j50,50],[bk.j10,10],[bk.f1,1]];
+    var out = "", used = 0;
+    for(var i=0;i<parts.length;i++){
+      var n = parts[i][0], v = parts[i][1];
+      if(!n) continue;
+      var isNote = NOTES[v] ? true : false;
+      var show = Math.min(n, Math.max(0, max - used));
+      for(var k=0;k<show;k++){
+        out += '<span class="it'+(isNote ? '' : ' cn')+'">'+(isNote ? noteSvg(v) : coinSvg(v))+'</span>';
+      }
+      used += show;
+      if(n > show) out += '<span class="q">×'+n+'</span>';
+      if(used >= max) break;
+    }
+    return '<div class="cash-row">'+out+'</div>';
+  }
+
   /* ---------- 状态 ---------- */
-  var state = { initial: START_FEN, added: 0, items: [], deposits: [] };
+  var state = { initial: START_FEN, added: 0, items: [], deposits: [], goal: START_FEN };
 
   function num(v, def){ return (typeof v === "number" && isFinite(v)) ? Math.round(v) : def; }
 
@@ -744,6 +1116,7 @@
       if(!d || typeof d !== "object") return;
       state.initial = num(d.initial, START_FEN);
       state.added   = num(d.added, 0);
+      state.goal    = Math.max(1, num(d.goal, START_FEN));
       state.items   = Array.isArray(d.items) ? d.items.filter(function(x){
         return x && typeof x.price === "number" && isFinite(x.price);
       }).map(function(x){
@@ -787,25 +1160,46 @@
   }
   function balance(){ return income() - spent(); }
 
-  /* ---------- 渲染：顶部 ---------- */
-  var ring = document.getElementById("ring");
-  var ringYuan = document.getElementById("ringYuan");
+  /* ---------- 渲染：顶部小猪满度 ---------- */
   var boxYuan = document.getElementById("boxYuan");
   var boxJiao = document.getElementById("boxJiao");
   var boxFen  = document.getElementById("boxFen");
-  var cmpLeft = document.getElementById("cmpLeft");
-  var cmpRight = document.getElementById("cmpRight");
   var moodIco = document.getElementById("moodIco");
   var echoBuyV = document.getElementById("echoBuyV");
   var echoAddV = document.getElementById("echoAddV");
+  var balNum = document.getElementById("balNum");
+  var balUnit = document.getElementById("balUnit");
+  var pigLvl = document.getElementById("pigLvl");
+  var pigSub = document.getElementById("pigSub");
+  var pigLiquid = document.getElementById("pigLiquid");
+  var pigCash = document.getElementById("pigCash");
+  var piggyBox = document.getElementById("piggyBox");
+  var PIG_BOTTOM = 152;          // 小猪身体底边
+  var PIG_SPAN   = 104;          // 可装钱的高度
+
+  /* 小猪肚子里的小钱（位置固定，靠水位决定亮不亮） */
+  var PIG_CASH = [
+    {x: 36,y:120,w:34,h:15,v:"bk1" }, {x:104,y:121,w:34,h:15,v:"bk50"},
+    {x: 68,y:105,w:34,h:15,v:"bk20"}, {x:134,y:106,w:34,h:15,v:"bk10"},
+    {x: 42,y: 91,w:34,h:15,v:"bk5" }, {x:104,y:92,w:34,h:15,v:"bk1"},
+    {x: 70,y: 77,w:34,h:15,v:"bk100"},{x:126,y:78,w:34,h:15,v:"bk50"},
+    {x: 88,y: 63,w:18,h:18,v:"cn100"},{x:118,y:63,w:18,h:18,v:"cn50"}
+  ];
+  function buildPigCash(){
+    if(!pigCash) return;
+    var s = "";
+    PIG_CASH.forEach(function(it){
+      s += '<use x="'+it.x+'" y="'+it.y+'" width="'+it.w+'" height="'+it.h+'" '+
+           'data-y="'+(it.y + it.h/2)+'" opacity=".18" '+
+           'xlink:href="#'+it.v+'" href="#'+it.v+'"/>';
+    });
+    pigCash.innerHTML = s;
+  }
 
   function renderTotal(animate){
-    var b = balance(), inc = income();
-    var pct = inc > 0 ? Math.max(0, Math.min(100, b / inc * 100)) : 0;
+    var b = balance(), goal = Math.max(1, state.goal);
+    var pct = Math.max(0, Math.min(100, b / goal * 100));
     var p = split(b);
-
-    ringYuan.textContent = p.yuan;
-    ring.style.strokeDashoffset = (CIRC * (1 - pct/100)).toFixed(2);
 
     boxYuan.querySelector(".v").textContent = p.yuan;
     boxJiao.querySelector(".v").textContent = p.jiao;
@@ -814,25 +1208,48 @@
     boxFen.classList.toggle("zero",  p.fen  === 0);
     boxYuan.classList.toggle("zero", p.yuan === 0 && (p.jiao || p.fen));
 
+    /* 余额大字 */
+    balNum.textContent = p.yuan;
+    balUnit.textContent = (p.yuan > 0) ? "元" : (p.jiao > 0 ? "角" : "分");
+
     var echoTxt = (p.jiao || p.fen) ? fmt(b) : (p.yuan + "元");
     echoBuyV.textContent = echoTxt;
     echoAddV.textContent = echoTxt;
 
-    cmpLeft.style.width = pct + "%";
-    cmpRight.style.width = (100 - pct) + "%";
-    cmpLeft.querySelector(".cmp-ico").style.display = pct > 13 ? "" : "none";
+    /* 小猪水位 */
+    var h = PIG_SPAN * pct / 100;
+    if(pigLiquid) pigLiquid.style.transform = "translateY(" + (PIG_BOTTOM - h) + "px)";
+    if(pigCash){
+      var topY = PIG_BOTTOM - h;
+      var uses = pigCash.getElementsByTagName("use");
+      for(var i=0;i<uses.length;i++){
+        var u = uses[i], y = parseFloat(u.getAttribute("data-y"));
+        u.setAttribute("opacity", (y >= topY - 2) ? "1" : ".18");
+      }
+    }
+    var isFull = pct >= 99.5;
+    pigLvl.textContent = isFull ? "满了 🎉" : Math.round(pct) + "%";
+    pigLvl.classList.toggle("full", isFull);
+    pigSub.innerHTML = isFull
+      ? '装满啦，还能继续存 🎉'
+      : '装满 <b>' + fmt(state.goal) + '</b> 就满 · 还差 <b>' + fmt(state.goal - b) + '</b>';
 
     if(b <= 0){ moodIco.textContent = "😭"; }
-    else if(pct >= 70){ moodIco.textContent = "😄"; }
-    else if(pct >= 40){ moodIco.textContent = "🙂"; }
-    else if(pct >= 18){ moodIco.textContent = "😟"; }
+    else if(isFull){ moodIco.textContent = "🤩"; }
+    else if(pct >= 65){ moodIco.textContent = "😄"; }
+    else if(pct >= 35){ moodIco.textContent = "🙂"; }
+    else if(pct >= 15){ moodIco.textContent = "😟"; }
     else { moodIco.textContent = "😰"; }
 
     if(animate){
-      ringYuan.classList.remove("pop");
-      void ringYuan.offsetWidth;
-      ringYuan.classList.add("pop");
-      setTimeout(function(){ ringYuan.classList.remove("pop"); }, 230);
+      balNum.classList.remove("pop");
+      void balNum.offsetWidth;
+      balNum.classList.add("pop");
+      setTimeout(function(){ balNum.classList.remove("pop"); }, 230);
+      piggyBox.classList.remove("jiggle");
+      void piggyBox.offsetWidth;
+      piggyBox.classList.add("jiggle");
+      setTimeout(function(){ piggyBox.classList.remove("jiggle"); }, 600);
     }
   }
 
@@ -843,23 +1260,16 @@
   function makeNote(v){
     var d = document.createElement("div");
     d.className = "note"; d.dataset.v = v;
-    d.innerHTML = '<div class="pattern"></div><div class="cny">¥</div><div class="denom">'+v+'</div>';
+    d.innerHTML = cashSvg(v);
     return d;
   }
-  function makeCoinYuan(){
+  /* 硬币：100=1元币，50=5角，10=1角，1=1分 */
+  function makeCoin(v){
     var d = document.createElement("div");
-    d.className = "coin"; d.innerHTML = '1<small>元</small>';
-    return d;
-  }
-  function makeJiao(v){
-    var d = document.createElement("div");
-    d.className = "jiao"; d.innerHTML = v+'<small>角</small>';
-    return d;
-  }
-  function makeFen(){
-    var d = document.createElement("div");
-    d.className = "fen"; d.textContent = "1";
-    d.title = "1分";
+    d.className = (v >= 100 ? "coin" : v >= 10 ? "jiao" : "fen");
+    d.dataset.c = v;
+    d.title = (v === 100 ? "1元硬币" : v === 50 ? "5角硬币" : v === 10 ? "1角硬币" : "1分");
+    d.innerHTML = coinSvg(v);
     return d;
   }
 
@@ -870,9 +1280,9 @@
       stageEl.classList.add("is-empty");
       moneyWrap.innerHTML =
         '<div class="empty-state">'+
-          '<div class="empty-jar">🫙</div>'+
-          '<div class="empty-bar"><i></i></div>'+
-          '<div class="empty-tip">钱花光啦</div>'+
+          '<div class="empty-jar">🐷</div>'+
+          '<div class="empty-tip">小猪空空的啦</div>'+
+          '<div style="font-size:13px;font-weight:800;color:#BCAAA4">点下面「💰 存钱」把它填满吧</div>'+
         '</div>';
       return;
     }
@@ -887,69 +1297,48 @@
       delay++;
       frag.appendChild(el);
     }
+    function addMore(txt){
+      var m = document.createElement("div");
+      m.className = "note more";
+      m.innerHTML = '<span>'+txt+'</span>';
+      frag.appendChild(m);
+    }
 
     YUAN_NOTES.forEach(function(item){
       var n = bk["n"+item.fen] || 0;
       if(!n) return;
       var show = Math.min(n, MAX_SHOW);
       for(var i=0;i<show;i++) addEl(makeNote(item.v));
-      if(n > show){
-        var m = document.createElement("div");
-        m.className = "note more";
-        m.innerHTML = '<div class="denom">'+item.v+' ×'+n+'</div>';
-        frag.appendChild(m);
-      }
+      if(n > show) addMore(item.v + "元 ×" + n);
     });
 
-    var c100 = bk.c100;
-    if(c100){
-      var showC = Math.min(c100, MAX_SHOW);
-      for(var i=0;i<showC;i++) addEl(makeCoinYuan());
-      if(c100 > showC){
-        var mc = document.createElement("div");
-        mc.className = "coin"; mc.style.background = "#E0E0E0"; mc.style.color = "#6D4C41";
-        mc.textContent = "1×" + c100;
-        frag.appendChild(mc);
-      }
+    if(bk.c100){
+      var showC = Math.min(bk.c100, MAX_SHOW);
+      for(var i=0;i<showC;i++) addEl(makeCoin(100));
+      if(bk.c100 > showC) addMore("1元 ×" + bk.c100);
     }
 
     if(bk.j50 || bk.j10){
       var lbl = document.createElement("div");
       lbl.className = "grp";
-      lbl.innerHTML = '<span class="line"></span><span class="txt">🟢 角</span><span class="line"></span>';
+      lbl.innerHTML = '<span class="line"></span><span class="txt">🪙 角币</span><span class="line"></span>';
       frag.appendChild(lbl);
     }
     var show50 = Math.min(bk.j50, MAX_SHOW);
-    for(var i=0;i<show50;i++) addEl(makeJiao(5));
-    if(bk.j50 > show50){
-      var m50 = document.createElement("div");
-      m50.className = "jiao"; m50.style.background = "#E0E0E0"; m50.style.color = "#00695C";
-      m50.textContent = "5×" + bk.j50;
-      frag.appendChild(m50);
-    }
+    for(var i=0;i<show50;i++) addEl(makeCoin(50));
+    if(bk.j50 > show50) addMore("5角 ×" + bk.j50);
     var show10 = Math.min(bk.j10, MAX_SHOW);
-    for(var j=0;j<show10;j++) addEl(makeJiao(1));
-    if(bk.j10 > show10){
-      var m10 = document.createElement("div");
-      m10.className = "jiao"; m10.style.background = "#E0E0E0"; m10.style.color = "#00695C";
-      m10.textContent = "1×" + bk.j10;
-      frag.appendChild(m10);
-    }
+    for(var j=0;j<show10;j++) addEl(makeCoin(10));
+    if(bk.j10 > show10) addMore("1角 ×" + bk.j10);
 
     if(bk.f1){
       var lbf = document.createElement("div");
       lbf.className = "grp";
-      lbf.innerHTML = '<span class="line"></span><span class="txt">🟤 分</span><span class="line"></span>';
+      lbf.innerHTML = '<span class="line"></span><span class="txt">🪙 分币</span><span class="line"></span>';
       frag.appendChild(lbf);
       var showF = Math.min(bk.f1, 10);
-      for(var k=0;k<showF;k++) addEl(makeFen());
-      if(bk.f1 > showF){
-        var mf = document.createElement("div");
-        mf.className = "fen"; mf.style.width = "58px";
-        mf.style.borderRadius = "17px"; mf.style.padding = "0 9px";
-        mf.textContent = "1×" + bk.f1;
-        frag.appendChild(mf);
-      }
+      for(var k=0;k<showF;k++) addEl(makeCoin(1));
+      if(bk.f1 > showF) addMore("1分 ×" + bk.f1);
     }
 
     moneyWrap.appendChild(frag);
@@ -1007,6 +1396,7 @@
   function closeSheet(el){
     el.classList.remove("open");
     if(el.id === "sheetBuy"){ stopCamera(); resetBuy(); }
+    if(el.id === "sheetEdit"){ stopCamera(); photo.url = null; photo.thumbEl = null; editRec = null; }
   }
   document.querySelectorAll(".sheet").forEach(function(sh){
     sh.addEventListener("click", function(e){ if(e.target === sh) closeSheet(sh); });
@@ -1022,7 +1412,8 @@
   /* 「买东西」和「存钱」两个面板各有一块取景框，取景时激活对应那块 */
   var CAMS = {
     buy: { video:document.getElementById("videoBuy"), ph:document.getElementById("camPhBuy"), box:null },
-    add: { video:document.getElementById("videoAdd"), ph:document.getElementById("camPhAdd"), box:document.getElementById("camBoxAdd") }
+    add: { video:document.getElementById("videoAdd"), ph:document.getElementById("camPhAdd"), box:document.getElementById("camBoxAdd") },
+    edit:{ video:document.getElementById("videoEdit"), ph:document.getElementById("camPhEdit"), box:document.getElementById("camBoxEdit") }
   };
   var activeCam = CAMS.buy;
   function byId(id){ return document.getElementById(id); }
@@ -1053,11 +1444,13 @@
 
   function stopCamera(){
     if(stream){ stream.getTracks().forEach(function(t){ t.stop(); }); stream = null; }
-    CAMS.buy.video.srcObject = null;
-    CAMS.buy.ph.classList.remove("hide");
-    CAMS.add.video.srcObject = null;
-    CAMS.add.ph.classList.remove("hide");
-    CAMS.add.box.style.display = "none";
+    ["buy","add","edit"].forEach(function(k){
+      var c = CAMS[k];
+      if(!c) return;
+      if(c.video) c.video.srcObject = null;
+      c.ph.classList.remove("hide");
+      if(c.box) c.box.style.display = "none";
+    });
   }
   function startCamera(key){
     activeCam = CAMS[key] || CAMS.buy;
@@ -1079,8 +1472,11 @@
       audio:false
     }).then(function(s){
       stream = s;
-      CAMS.buy.video.srcObject = s;  CAMS.buy.ph.classList.add("hide");
-      CAMS.add.video.srcObject = s;  CAMS.add.ph.classList.add("hide");
+      ["buy","add","edit"].forEach(function(k){
+        var c = CAMS[k]; if(!c) return;
+        if(c.video) c.video.srcObject = s;
+        c.ph.classList.add("hide");
+      });
       if(activeCam.box) activeCam.box.style.display = "block";
       activeCam.playing = true;
       return activeCam.video.play();
@@ -1149,31 +1545,44 @@
 
   function pickedFen(){ return picked.yuan*100 + picked.jiao*10 + picked.fen; }
 
-  function renderPreview(boxId){
+  /* 每个选项上放一张真钱图：元→对应纸币，角→硬币，分→1分 */
+  function chipInner(unitKind, v){
+    var unitTxt = unitKind === "yuan" ? "元" : unitKind === "jiao" ? "角" : "分";
+    var img = "";
+    if(v > 0){
+      if(unitKind === "yuan")      img = '<span class="ci">'+yuanIcon(v)+'</span>';
+      else if(unitKind === "jiao") img = '<span class="ci cn">'+coinSvg(v === 5 ? 50 : 10)+'</span>';
+      else                         img = '<span class="ci cn">'+coinSvg(1)+'</span>';
+    }
+    return img + '<span class="cv">'+v+'<small>'+unitTxt+'</small></span>';
+  }
+  function paintPreview(boxId, fen, emptyTxt){
     var box = document.getElementById(boxId);
-    var t = pickedFen();
-    box.innerHTML = t === 0 ? '<span class="empty-sum">点下面选金额（这一步必填）</span>' : fmtHTML(t, true);
+    box.innerHTML = fen === 0
+      ? '<span class="empty-sum">'+emptyTxt+'</span>'
+      : fmtHTML(fen, true) + cashRowHTML(fen, 8);
+  }
+  function renderPreview(boxId){
+    paintPreview(boxId, pickedFen(), "点下面选金额（这一步必填）");
   }
 
-  function buildPicker(boxId, opts, unitKind, key){
-    var box = document.getElementById(boxId);
-    box.innerHTML = "";
+  /* store 传 {yuan,jiao,fen} 这个对象，改哪个面板就传哪个 */
+  function buildPicker(boxEl, opts, unitKind, store, after){
+    boxEl.innerHTML = "";
     opts.forEach(function(v){
       var b = document.createElement("button");
       b.className = "chip";
       b.dataset.v = v;
-      var unitTxt = unitKind === "yuan" ? "元" : unitKind === "jiao" ? "角" : "分";
-      b.innerHTML = v + '<small>'+unitTxt+'</small>';
+      b.innerHTML = chipInner(unitKind, v);
       b.classList.add(unitKind === "yuan" ? "c-yuan" : unitKind === "jiao" ? "c-jiao" : "c-fen");
-      if(picked[key] === v) b.classList.add("sel");
+      if(store[unitKind] === v) b.classList.add("sel");
       b.addEventListener("click", function(){
-        picked[key] = v;
-        box.querySelectorAll(".chip").forEach(function(x){ x.classList.remove("sel"); });
+        store[unitKind] = v;
+        boxEl.querySelectorAll(".chip").forEach(function(x){ x.classList.remove("sel"); });
         b.classList.add("sel");
-        renderPreview("sumPreview");
-        refreshBuyLimits();
+        if(after) after();
       });
-      box.appendChild(b);
+      boxEl.appendChild(b);
     });
   }
 
@@ -1195,9 +1604,15 @@
 
   function buildBuyPickers(){
     renderPreview("sumPreview");
-    buildPicker("chipsYuan", YUAN_OPTS, "yuan", "yuan");
-    buildPicker("chipsJiao", JIAO_OPTS, "jiao", "jiao");
-    buildPicker("chipsFen",  FEN_OPTS,  "fen",  "fen");
+    buildPicker(document.getElementById("chipsYuan"), YUAN_OPTS, "yuan", picked, function(){
+      renderPreview("sumPreview"); refreshBuyLimits();
+    });
+    buildPicker(document.getElementById("chipsJiao"), JIAO_OPTS, "jiao", picked, function(){
+      renderPreview("sumPreview"); refreshBuyLimits();
+    });
+    buildPicker(document.getElementById("chipsFen"),  FEN_OPTS,  "fen",  picked, function(){
+      renderPreview("sumPreview"); refreshBuyLimits();
+    });
     refreshBuyLimits();
   }
 
@@ -1292,31 +1707,12 @@
   function addFen(){ return addPicked.yuan*100 + addPicked.jiao*10 + addPicked.fen; }
 
   function buildAddPickers(){
-    var box = document.getElementById("addPreview");
-    var t = addFen();
-    box.innerHTML = t === 0 ? '<span class="empty-sum">点下面选金额</span>' : fmtHTML(t, true);
-    [["addYuan", YUAN_OPTS, "yuan","yuan"],["addJiao", JIAO_OPTS, "jiao","jiao"],["addFen", FEN_OPTS, "fen","fen"]].forEach(function(cfg){
-      var boxEl = document.getElementById(cfg[0]);
-      boxEl.innerHTML = "";
-      cfg[1].forEach(function(v){
-        var b = document.createElement("button");
-        b.className = "chip";
-        b.dataset.v = v;
-        var unitTxt = cfg[2] === "yuan" ? "元" : cfg[2] === "jiao" ? "角" : "分";
-        b.innerHTML = v + '<small>'+unitTxt+'</small>';
-        b.classList.add(cfg[2]==="yuan" ? "c-yuan" : cfg[2]==="jiao" ? "c-jiao" : "c-fen");
-        if(addPicked[cfg[3]] === v) b.classList.add("sel");
-        b.addEventListener("click", function(){
-          addPicked[cfg[3]] = v;
-          boxEl.querySelectorAll(".chip").forEach(function(x){ x.classList.remove("sel"); });
-          b.classList.add("sel");
-          var t = addFen();
-          document.getElementById("addPreview").innerHTML =
-            t === 0 ? '<span class="empty-sum">点下面选金额</span>' : fmtHTML(t, true);
-        });
-        boxEl.appendChild(b);
+    [["addYuan", YUAN_OPTS, "yuan"],["addJiao", JIAO_OPTS, "jiao"],["addFen", FEN_OPTS, "fen"]].forEach(function(cfg){
+      buildPicker(document.getElementById(cfg[0]), cfg[1], cfg[2], addPicked, function(){
+        paintPreview("addPreview", addFen(), "点下面选金额");
       });
     });
+    paintPreview("addPreview", addFen(), "点下面选金额");
   }
 
   document.getElementById("btnAdd").addEventListener("click", function(){
@@ -1366,11 +1762,168 @@
     renderAll(true); confetti();
   });
 
+  /* ============================================================
+     修改 / 删除 已登记的记录
+     ============================================================ */
+  function findRec(id){
+    var i;
+    for(i=0;i<state.items.length;i++)    if(state.items[i].id === id)    return {arr:state.items,    idx:i, rec:state.items[i]};
+    for(i=0;i<state.deposits.length;i++) if(state.deposits[i].id === id) return {arr:state.deposits, idx:i, rec:state.deposits[i]};
+    return null;
+  }
+  function askDelete(it){
+    var f = findRec(it.id);
+    if(!f) return;
+    if(!confirm("删掉这一笔？\n" + (f.arr === state.deposits ? "存进去的钱会退回来" : "花掉的钱会退回来"))) return;
+    f.arr.splice(f.idx, 1);
+    save();
+    renderAll(true); renderHistory();
+    toast("↩️","删掉了","现在有 " + fmt(balance()));
+  }
+
+  var editRec = null;
+  var editPicked = {yuan:0, jiao:0, fen:0};
+
+  function editFen(){ return editPicked.yuan*100 + editPicked.jiao*10 + editPicked.fen; }
+
+  function openEdit(id){
+    var f = findRec(id);
+    if(!f) return;
+    editRec = f;
+    var p = split(f.rec.price);
+    editPicked = {yuan:p.yuan, jiao:p.jiao, fen:p.fen};
+    document.getElementById("editTitle").textContent =
+      (f.arr === state.deposits) ? "✏️ 改这笔存钱" : "✏️ 改这笔花销";
+    photo.url = f.rec.img || "";
+    photo.thumbEl = document.getElementById("editThumb");
+    paintThumb();
+    stopCamera();
+    buildEditPickers();
+    openSheet("sheetEdit");
+  }
+
+  function buildEditPickers(){
+    [["editYuan", YUAN_OPTS, "yuan"],["editJiao", JIAO_OPTS, "jiao"],["editFen", FEN_OPTS, "fen"]].forEach(function(cfg){
+      buildPicker(document.getElementById(cfg[0]), cfg[1], cfg[2], editPicked, function(){
+        paintPreview("editPreview", editFen(), "金额不能是 0");
+      });
+    });
+    paintPreview("editPreview", editFen(), "金额不能是 0");
+  }
+
+  document.getElementById("btnEditCam").addEventListener("click", function(){ startCamera("edit"); });
+  document.getElementById("btnEditShot").addEventListener("click", function(){
+    if(!stream){ startCamera("edit"); return; }
+    setPhoto(shootFromActive());
+  });
+  document.getElementById("btnEditFile").addEventListener("click", function(){
+    document.getElementById("editFileInput").click();
+  });
+  document.getElementById("editFileInput").addEventListener("change", function(e){
+    var f = e.target.files && e.target.files[0];
+    e.target.value = "";
+    if(f) processFile(f);
+  });
+  document.getElementById("btnEditClearPhoto").addEventListener("click", function(){
+    stopCamera(); clearPhoto(); toast("🗑","照片删掉了","不换照片也行");
+  });
+
+  document.getElementById("btnEditSave").addEventListener("click", function(){
+    if(!editRec) return;
+    var p = editFen();
+    if(p <= 0){ toast("🪙","金额不能是 0","点上面的数字选一个"); return; }
+    editRec.rec.price = p;
+    editRec.rec.img = photo.url || "";
+    editRec.rec.time = new Date().toLocaleString("zh-CN",{month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit"});
+    save();
+    closeSheet(document.getElementById("sheetEdit"));
+    renderAll(true); renderHistory();
+    toast("✏️","改好了","这一笔现在是 " + fmt(p));
+  });
+  document.getElementById("btnEditDel").addEventListener("click", function(){
+    if(!editRec) return;
+    var f = editRec;
+    if(!confirm("删掉这一笔？\n" + (f.arr === state.deposits ? "存进去的钱会退回来" : "花掉的钱会退回来"))) return;
+    f.arr.splice(f.idx, 1);
+    save();
+    closeSheet(document.getElementById("sheetEdit"));
+    renderAll(true); renderHistory();
+    toast("↩️","删掉了","现在有 " + fmt(balance()));
+  });
+
   /* ---------- 买东西主按钮 ---------- */
   document.getElementById("btnBuy").addEventListener("click", function(){
     resetBuy();
     openSheet("sheetBuy");
   });
+
+  /* ============================================================
+     货币图认一认 / 存钱目标
+     ============================================================ */
+  var BOOK = [
+    {v:100, name:"100元", sub:"纸币 · 红色 · 壹佰圆"},
+    {v:50,  name:"50元",  sub:"纸币 · 绿色 · 伍拾圆"},
+    {v:20,  name:"20元",  sub:"纸币 · 棕色 · 贰拾圆"},
+    {v:10,  name:"10元",  sub:"纸币 · 蓝色 · 壹拾圆"},
+    {v:5,   name:"5元",   sub:"纸币 · 紫色 · 伍圆"},
+    {v:1,   name:"1元",   sub:"纸币 · 绿色 · 壹圆"},
+    {v:"c", name:"1元",   sub:"硬币 · 银白色 · 边上有小齿"},
+    {v:50,  name:"5角",   sub:"硬币 · 金黄色", coin:true},
+    {v:10,  name:"1角",   sub:"硬币 · 银灰色", coin:true}
+  ];
+  function buildBook(){
+    var g = document.getElementById("bookGrid");
+    if(!g) return;
+    var s = "";
+    BOOK.forEach(function(it){
+      var icon = it.coin ? coinSvg(it.v) : noteSvg(it.v);
+      s += '<div class="bk-card"><div class="img">'+icon+'</div>'+
+           '<div><div class="t1">'+it.name+'</div><div class="t2">'+it.sub+'</div></div></div>';
+    });
+    g.innerHTML = s;
+  }
+  document.getElementById("btnBook").addEventListener("click", function(){
+    buildBook(); openSheet("sheetBook");
+  });
+
+  var GOAL_OPTS = [50, 100, 200, 300, 500, 1000];
+  function buildGoalChips(){
+    var box = document.getElementById("goalChips");
+    box.innerHTML = "";
+    GOAL_OPTS.forEach(function(yuan){
+      var b = document.createElement("button");
+      b.className = "chip" + (state.goal === yuan*100 ? " sel" : "");
+      b.innerHTML = '<span class="ci">'+yuanIcon(yuan)+'</span>'+
+                    '<span class="cv">'+yuan+'<small>元</small></span>';
+      b.addEventListener("click", function(){
+        setGoal(yuan*100);
+        closeSheet(document.getElementById("sheetGoal"));   // 关掉，让小朋友直接看到小猪重新标定
+      });
+      box.appendChild(b);
+    });
+  }
+  function setGoal(fen){
+    state.goal = Math.max(1, Math.round(fen));
+    save();
+    buildGoalChips();
+    renderAll(false);
+    toast("🎯","目标 "+fmt(state.goal),"装满它就是 100%");
+  }
+  function openGoal(){
+    document.getElementById("goalBal").textContent = fmt(balance());
+    buildGoalChips();
+    openSheet("sheetGoal");
+  }
+  document.getElementById("btnGoalSet").addEventListener("click", function(){
+    var el = document.getElementById("goalInput");
+    var y = Math.round(parseFloat(el.value));
+    if(!isFinite(y) || y <= 0){ toast("✏️","填个正整数","比如 300"); return; }
+    el.value = "";
+    setGoal(y * 100);
+    closeSheet(document.getElementById("sheetGoal"));
+  });
+  document.getElementById("btnGoal").addEventListener("click", openGoal);
+  piggyBox.addEventListener("click", openGoal);
 
   /* ---------- 历史 ---------- */
   var historyBox = document.getElementById("historyBox");
@@ -1429,28 +1982,17 @@
         media +
         '<div class="tag'+(isIn ? ' in' : '')+'">'+tagTxt+'</div>'+
         '<div class="hbar'+(isIn ? ' in' : '')+'" style="width:'+w+'%"></div>'+
-        '<button class="del">🗑</button>';
-      d.querySelector(".del").addEventListener("click", function(ev){
-        ev.stopPropagation();
-        if(!confirm("删除这条？金额会退回来")) return;
-        var i, idx = -1;
-        for(i=0;i<state.items.length;i++){ if(state.items[i].id === it.id){ idx = i; break; } }
-        if(idx >= 0){
-          state.items.splice(idx, 1);
-          save();
-        }else{
-          idx = -1;
-          for(i=0;i<state.deposits.length;i++){ if(state.deposits[i].id === it.id){ idx = i; break; } }
-          if(idx >= 0){
-            state.deposits.splice(idx, 1);
-            save();
-          }
-        }
-        if(idx >= 0){
-          renderAll(true); renderHistory();
-          toast("↩️","退回来了","现在有 " + fmt(balance()));
-        }
+        '<div class="acts">'+
+          '<button class="ed" title="修改">✏️</button>'+
+          '<button class="dl" title="删除">🗑</button>'+
+        '</div>';
+      d.querySelector(".ed").addEventListener("click", function(ev){
+        ev.stopPropagation(); openEdit(it.id);
       });
+      d.querySelector(".dl").addEventListener("click", function(ev){
+        ev.stopPropagation(); askDelete(it);
+      });
+      d.addEventListener("click", function(){ openEdit(it.id); });
       g.appendChild(d);
     });
     historyBox.innerHTML = "";
@@ -1459,6 +2001,9 @@
 
   var piggy = document.querySelector(".piggy");
   piggy.addEventListener("dblclick", function(){ renderHistory(); openSheet("sheetHistory"); });
+  document.getElementById("btnHistory").addEventListener("click", function(){
+    renderHistory(); openSheet("sheetHistory");
+  });
   var piggyTimer = null;
   piggy.addEventListener("touchstart", function(){
     piggyTimer = setTimeout(function(){
@@ -1471,8 +2016,8 @@
   });
 
   /* ---------- 初始化 ---------- */
-  ring.setAttribute("stroke-dasharray", CIRC.toFixed(2));
-  ring.setAttribute("stroke-dashoffset", "0");
+  buildSprite();
+  buildPigCash();
   load();
   renderAll(false);
   if(!state.items.length && state.added === 0 && !state.deposits.length){
