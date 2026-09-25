@@ -1,0 +1,1228 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="存钱罐">
+<meta name="theme-color" content="#FFB74D">
+<title>我的存钱罐</title>
+<style>
+  :root{
+    --bg:#FFF8E7;
+    --card:#FFFFFF;
+    --ink:#4A3728;
+    --orange:#FF9F43;
+    --red:#E8453C;
+    --red-dark:#B8332C;
+    --green:#4CAF50;
+    --gold:#FFD54F;
+    --jiao:#26A69A;
+    --fen:#8D6E63;
+    --safe-t:env(safe-area-inset-top,0px);
+    --safe-b:env(safe-area-inset-bottom,0px);
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0;min-height:100%}
+  body{
+    font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Apple Color Emoji","Segoe UI Emoji",system-ui,sans-serif;
+    background:var(--bg);color:var(--ink);
+    overflow-x:hidden;user-select:none;-webkit-user-select:none;
+    display:flex;flex-direction:column;min-height:100vh;
+    padding-bottom:var(--safe-b);
+  }
+
+  /* ============ 顶部 ============ */
+  .header{
+    position:sticky;top:0;z-index:50;
+    background:linear-gradient(180deg,#FFE9C4 0%,#FFF8E7 100%);
+    padding:calc(10px + var(--safe-t)) 14px 12px;
+    border-bottom:4px solid #FFE0B2;
+  }
+  .head-grid{
+    display:flex;align-items:center;gap:14px;
+    max-width:560px;margin:0 auto;
+  }
+  /* 环形进度 */
+  .ring-wrap{position:relative;width:96px;height:96px;flex-shrink:0}
+  .ring-wrap svg{width:100%;height:100%;transform:rotate(-90deg);display:block}
+  .ring-bg{fill:none;stroke:#F1E4CE;stroke-width:13}
+  .ring-fg{
+    fill:none;stroke:url(#ringGrad);stroke-width:13;stroke-linecap:round;
+    transition:stroke-dashoffset .7s cubic-bezier(.4,0,.2,1);
+  }
+  .ring-center{
+    position:absolute;inset:0;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;
+  }
+  .ring-yuan{
+    font-size:27px;font-weight:900;color:var(--red);line-height:1;
+    font-variant-numeric:tabular-nums;letter-spacing:-1.5px;
+    transition:transform .2s cubic-bezier(.34,1.56,.64,1);
+  }
+  .ring-yuan.pop{transform:scale(1.22)}
+  .ring-unit{font-size:12px;font-weight:800;color:var(--red);opacity:.75;margin-top:1px}
+
+  .head-right{flex:1;min-width:0;display:flex;flex-direction:column;gap:8px}
+  .mood-line{display:flex;align-items:center;gap:8px}
+  .piggy{font-size:26px;line-height:1;animation:bob 2.6s ease-in-out infinite}
+  @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+  .mood{font-size:25px;line-height:1;animation:bob 2.2s ease-in-out infinite}
+
+  /* 元角分 三段显示 */
+  .yjf{display:flex;align-items:stretch;gap:5px;flex-wrap:nowrap}
+  .unit-box{
+    display:flex;align-items:baseline;justify-content:center;gap:1px;
+    background:#fff;border-radius:10px;padding:5px 8px;
+    box-shadow:0 3px 0 rgba(74,55,40,.08);
+    flex:1;min-width:0;
+  }
+  .unit-box .v{
+    font-size:21px;font-weight:900;line-height:1;
+    font-variant-numeric:tabular-nums;
+    overflow:hidden;text-overflow:ellipsis;
+  }
+  .unit-box .u{font-size:11px;font-weight:800;opacity:.6;flex-shrink:0}
+  .u-yuan .v{color:var(--red)}
+  .u-jiao .v{color:var(--jiao)}
+  .u-fen  .v{color:var(--fen)}
+  /* 0值弱化 */
+  .unit-box.zero{opacity:.3}
+
+  /* 横向对比条 */
+  .cmp-bar{
+    display:flex;height:26px;border-radius:8px;overflow:hidden;
+    box-shadow:inset 0 2px 5px rgba(74,55,40,.13);background:#F1E4CE;
+  }
+  .cmp-left{
+    background:linear-gradient(90deg,#FFD54F,#FF9F43);
+    display:flex;align-items:center;justify-content:center;
+    transition:width .7s cubic-bezier(.4,0,.2,1);
+    min-width:0;overflow:hidden;position:relative;
+  }
+  .cmp-right{
+    background:linear-gradient(90deg,#8D6E63,#6D4C41);
+    display:flex;align-items:center;justify-content:center;
+    transition:width .7s cubic-bezier(.4,0,.2,1);
+    min-width:0;overflow:hidden;position:relative;
+  }
+  .cmp-left::after,.cmp-right::after{
+    content:"";position:absolute;inset:0;
+    background:repeating-linear-gradient(115deg,rgba(255,255,255,.22) 0 9px,transparent 9px 20px);
+  }
+  .cmp-ico{font-size:14px;z-index:2}
+
+  /* ============ 钞票墙 ============ */
+  .stage{
+    padding:18px 12px 12px;width:100%;max-width:900px;margin:0 auto;
+    flex:1 1 auto;display:flex;align-items:flex-start;justify-content:center;
+    min-height:0;overflow-y:auto;
+  }
+  .stage.is-empty{align-items:center;justify-content:center}
+  .money-wrap{
+    display:flex;flex-wrap:wrap;justify-content:center;align-items:center;
+    gap:9px 10px;width:100%;
+  }
+
+  /* 元票（大） */
+  .note{
+    position:relative;border-radius:9px;
+    box-shadow:0 4px 0 rgba(74,55,40,.16),0 7px 14px rgba(74,55,40,.12);
+    display:flex;align-items:center;justify-content:center;
+    overflow:hidden;transition:transform .5s cubic-bezier(.5,-0.3,.7,.5),opacity .5s;
+    animation:noteIn .4s cubic-bezier(.34,1.4,.64,1) both;
+  }
+  @keyframes noteIn{from{transform:scale(.3) rotate(-14deg);opacity:0}to{transform:scale(1) rotate(0);opacity:1}}
+  .note.gone,.coin.gone,.jiao.gone,.fen.gone{transform:translate(70px,-160px) rotate(40deg) scale(.4);opacity:0}
+  .note .denom{font-weight:900;letter-spacing:-1px;z-index:2;text-shadow:0 1px 2px rgba(0,0,0,.18)}
+  .note .cny{position:absolute;top:4px;left:6px;font-size:10px;font-weight:900;opacity:.75;z-index:2}
+  .note .pattern{
+    position:absolute;inset:0;opacity:.2;z-index:1;
+    background:
+      radial-gradient(circle at 18% 30%,rgba(255,255,255,.9) 0 4px,transparent 5px),
+      radial-gradient(circle at 82% 70%,rgba(255,255,255,.75) 0 3px,transparent 4px),
+      repeating-linear-gradient(45deg,rgba(255,255,255,.35) 0 3px,transparent 3px 9px);
+  }
+  .note[data-v="100"]{width:140px;height:63px;background:linear-gradient(135deg,#F48FB1,#E57399 60%,#D81B60);color:#fff;font-size:25px}
+  .note[data-v="50"] {width:124px;height:58px;background:linear-gradient(135deg,#81C784,#4CAF50 60%,#2E7D32);color:#fff;font-size:23px}
+  .note[data-v="10"] {width:106px;height:52px;background:linear-gradient(135deg,#64B5F6,#2196F3 60%,#1565C0);color:#fff;font-size:21px}
+  .note[data-v="5"]  {width:94px;height:47px;background:linear-gradient(135deg,#BA9BE0,#9575CD 60%,#5E35B1);color:#fff;font-size:19px}
+  .note.more{
+    width:106px;height:52px;background:linear-gradient(135deg,#F5F5F5,#E0E0E0);
+    color:#6D4C41;font-size:18px;border:2px dashed #BCAAA4;
+  }
+
+  /* 元硬币 */
+  .coin{
+    width:52px;height:52px;border-radius:50%;
+    background:radial-gradient(circle at 34% 30%,#FFE082,#FFC107 45%,#F5A623);
+    color:#7A4F01;font-size:17px;font-weight:900;
+    box-shadow:0 3px 0 #D68F14,0 6px 11px rgba(74,55,40,.2),inset 0 0 0 4px rgba(255,255,255,.32);
+    display:flex;align-items:center;justify-content:center;flex-direction:column;
+    transition:transform .5s cubic-bezier(.5,-0.3,.7,.5),opacity .5s;
+    animation:noteIn .4s cubic-bezier(.34,1.4,.64,1) both;
+    line-height:1;
+  }
+  .coin small{font-size:9px;font-weight:800;opacity:.8;margin-top:1px}
+
+  /* 角币（青绿，中等） */
+  .jiao{
+    width:46px;height:46px;border-radius:50%;
+    background:radial-gradient(circle at 34% 30%,#80CBC4,#26A69A 48%,#00897B);
+    color:#fff;font-size:16px;font-weight:900;
+    box-shadow:0 3px 0 #00796B,0 5px 10px rgba(74,55,40,.18),inset 0 0 0 3px rgba(255,255,255,.3);
+    display:flex;align-items:center;justify-content:center;flex-direction:column;
+    transition:transform .5s cubic-bezier(.5,-0.3,.7,.5),opacity .5s;
+    animation:noteIn .4s cubic-bezier(.34,1.4,.64,1) both;
+    line-height:1;
+  }
+  .jiao small{font-size:9px;font-weight:800;opacity:.9;margin-top:1px}
+
+  /* 分币（棕铜色，最小） */
+  .fen{
+    width:34px;height:34px;border-radius:50%;
+    background:radial-gradient(circle at 34% 30%,#D7CCC8,#A1887F 50%,#795548);
+    color:#fff;font-size:13px;font-weight:900;
+    box-shadow:0 2px 0 #5D4037,0 4px 7px rgba(74,55,40,.16),inset 0 0 0 2px rgba(255,255,255,.28);
+    display:flex;align-items:center;justify-content:center;
+    transition:transform .5s cubic-bezier(.5,-0.3,.7,.5),opacity .5s;
+    animation:noteIn .4s cubic-bezier(.34,1.4,.64,1) both;
+  }
+  /* 分组标签 */
+  .grp{
+    width:100%;display:flex;align-items:center;gap:8px;
+    font-size:12px;font-weight:900;color:#A1887F;
+    padding:2px 4px;letter-spacing:.5px;
+    opacity:.85;
+  }
+  .grp .line{flex:1;height:2px;background:repeating-linear-gradient(90deg,#E0D5C0 0 6px,transparent 6px 12px)}
+  .grp .txt{display:flex;align-items:center;gap:4px;white-space:nowrap}
+
+  /* 空状态 */
+  .empty-state{
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;
+    padding:26px 12px;width:100%;
+  }
+  .empty-jar{font-size:62px;opacity:.3;animation:bob 3s ease-in-out infinite}
+  .empty-bar{width:144px;height:15px;border-radius:8px;background:#F1E4CE;overflow:hidden}
+  .empty-bar i{display:block;height:100%;width:4%;background:#D7CCC8;border-radius:8px}
+  .empty-tip{font-size:15px;font-weight:800;color:#BCAAA4}
+
+  /* ============ 底部 ============ */
+  .actions{
+    margin-top:auto;display:flex;gap:11px;justify-content:center;
+    padding:11px 14px 15px;
+    background:linear-gradient(0deg,#FFF8E7 40%,rgba(255,248,231,.9));
+  }
+  .btn{
+    flex:1;max-width:250px;border:none;border-radius:20px;
+    padding:16px 10px;font-size:18px;font-weight:900;font-family:inherit;
+    color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;
+    transition:transform .12s,box-shadow .12s;
+  }
+  .btn:active{transform:translateY(3px);box-shadow:none !important}
+  .btn svg{width:25px;height:25px;flex-shrink:0}
+  .btn-buy{background:linear-gradient(180deg,#FF7043,#E8453C);box-shadow:0 6px 0 #B8332C}
+  .btn-add{background:linear-gradient(180deg,#66BB6A,#43A047);box-shadow:0 6px 0 #2E7D32}
+
+  /* ============ 弹层 ============ */
+  .sheet{
+    position:fixed;inset:0;z-index:200;
+    background:rgba(74,55,40,.45);
+    display:none;align-items:flex-end;justify-content:center;
+  }
+  .sheet.open{display:flex;animation:fadeIn .2s ease}
+  @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+  .sheet-body{
+    width:100%;max-width:640px;max-height:84vh;overflow-y:auto;
+    background:var(--card);border-radius:26px 26px 0 0;
+    padding:16px 15px calc(20px + var(--safe-b));
+    animation:slideUp .3s cubic-bezier(.34,1.3,.64,1);
+    -webkit-overflow-scrolling:touch;
+    box-shadow:0 -8px 30px rgba(74,55,40,.25);
+  }
+  @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+  /* 悬浮余额：右上角，元角分同时显示 */
+  .echo{
+    position:absolute;top:calc(12px + var(--safe-t));right:14px;
+    background:rgba(255,255,255,.97);border-radius:17px;padding:6px 13px;
+    box-shadow:0 5px 18px rgba(74,55,40,.22);
+    display:flex;align-items:baseline;gap:3px;
+    font-variant-numeric:tabular-nums;pointer-events:none;white-space:nowrap;
+  }
+  .echo .ev{font-size:19px;font-weight:900;line-height:1;color:var(--red)}
+  .echo .p{font-size:15px;margin-right:2px}
+
+  .sheet-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:13px}
+  .sheet-title{font-size:18px;font-weight:900;display:flex;align-items:center;gap:7px}
+  .close-x{
+    width:39px;height:39px;border-radius:50%;border:none;background:#F1E4CE;
+    color:#8D6E63;font-size:19px;font-weight:900;cursor:pointer;font-family:inherit;
+    display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  }
+  .close-x:active{transform:scale(.92)}
+
+  /* 相机 */
+  .cam-box{
+    width:100%;border-radius:17px;overflow:hidden;background:#000;
+    position:relative;aspect-ratio:4/3;display:flex;align-items:center;justify-content:center;
+  }
+  .cam-box video{width:100%;height:100%;object-fit:cover;position:absolute;inset:0;z-index:2}
+  .cam-box canvas{display:none}
+  .cam-ph{
+    position:absolute;inset:0;z-index:3;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    background:linear-gradient(160deg,#8D6E63,#5D4037);color:#fff;
+    text-align:center;font-size:14px;gap:9px;line-height:1.7;
+  }
+  .cam-ph .big-ico{font-size:44px}
+  .cam-ph.hide{display:none}
+  .shot{width:100%;border-radius:17px;display:block;background:#000}
+  .row2{display:flex;gap:10px;margin-top:11px}
+
+  /* 价格：三层（元/角/分）拨盘式 */
+  .pick-block{margin-bottom:12px}
+  .pick-head{
+    display:flex;align-items:center;gap:7px;
+    font-size:13px;font-weight:900;color:#A1887F;margin-bottom:8px;
+  }
+  .pick-head .dot{width:9px;height:9px;border-radius:3px}
+  .d-yuan{background:var(--red)}
+  .d-jiao{background:var(--jiao)}
+  .d-fen{background:var(--fen)}
+  .chips{display:flex;flex-wrap:wrap;gap:8px}
+  .chip{
+    border:none;border-radius:13px;padding:10px 14px;cursor:pointer;
+    font-family:inherit;font-weight:900;font-size:17px;
+    font-variant-numeric:tabular-nums;
+    transition:transform .12s,box-shadow .12s;
+    display:flex;align-items:baseline;gap:3px;
+  }
+  .chip small{font-size:11px;font-weight:800;opacity:.75}
+  .chip:active{transform:translateY(2px);box-shadow:none}
+  .c-yuan{background:#FCE4EC;color:#C2185B;box-shadow:0 4px 0 #F8BBD0}
+  .c-jiao{background:#E0F2F1;color:#00796B;box-shadow:0 4px 0 #B2DFDB}
+  .c-fen {background:#EFEBE9;color:#5D4037;box-shadow:0 4px 0 #D7CCC8}
+  .chip.sel{outline:4px solid var(--orange);outline-offset:-1px;transform:scale(1.05)}
+  .chip.dis{opacity:.26;pointer-events:none;filter:grayscale(1)}
+
+  /* 当前选中金额预览 */
+  .sum-preview{
+    display:flex;align-items:center;justify-content:center;gap:6px;
+    background:#FFF8E7;border:3px dashed #FFE0B2;border-radius:16px;
+    padding:11px;margin-bottom:13px;min-height:58px;
+    font-weight:900;flex-wrap:wrap;
+  }
+  .sum-preview .empty-sum{font-size:14px;color:#BCAAA4;font-weight:800}
+  .sp-box{display:flex;align-items:baseline;gap:2px}
+  .sp-box .v{font-size:25px;line-height:1;font-variant-numeric:tabular-nums}
+  .sp-box .u{font-size:12px;font-weight:800;opacity:.6}
+  .sp-yuan .v{color:var(--red)}
+  .sp-jiao .v{color:var(--jiao)}
+  .sp-fen .v{color:var(--fen)}
+  .sum-preview .op{font-size:19px;color:#D7CCC8;font-weight:900}
+
+  /* 通用小按钮 */
+  .mini{
+    border:none;border-radius:14px;padding:13px;font-size:15px;font-weight:900;
+    font-family:inherit;cursor:pointer;flex:1;
+    display:flex;align-items:center;justify-content:center;gap:6px;
+    transition:transform .12s;
+  }
+  .mini:active{transform:translateY(2px)}
+  .mini svg{width:19px;height:19px}
+  .mini-o{background:#F1E4CE;color:#8D6E63}
+  .mini-r{background:linear-gradient(180deg,#FF7043,#E8453C);color:#fff;box-shadow:0 4px 0 #B8332C}
+  .mini-g{background:linear-gradient(180deg,#66BB6A,#43A047);color:#fff;box-shadow:0 4px 0 #2E7D32}
+
+  /* 历史 */
+  .hist-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:10px}
+  .hist{
+    border-radius:14px;overflow:hidden;background:#fff;position:relative;
+    box-shadow:0 4px 12px rgba(74,55,40,.13);
+  }
+  .hist img{width:100%;aspect-ratio:1;object-fit:cover;display:block;background:#F1E4CE}
+  .hist .tag{
+    position:absolute;top:5px;left:5px;
+    background:rgba(232,69,60,.95);color:#fff;font-weight:900;font-size:12px;
+    padding:3px 7px;border-radius:9px;font-variant-numeric:tabular-nums;
+    box-shadow:0 2px 6px rgba(184,51,44,.4);line-height:1.15;
+    display:flex;align-items:baseline;gap:1px;
+  }
+  .hist .tag small{font-size:9px;opacity:.85}
+  .hist .hbar{
+    position:absolute;left:0;bottom:0;height:5px;
+    background:linear-gradient(90deg,#FF7043,#E8453C);
+    transition:width .5s;
+  }
+  .hist .del{
+    position:absolute;bottom:5px;right:5px;width:29px;height:29px;
+    border-radius:50%;border:none;background:rgba(74,55,40,.7);color:#fff;
+    font-size:14px;cursor:pointer;font-family:inherit;line-height:1;
+  }
+  .none-txt{text-align:center;padding:32px 16px;color:#BCAAA4;font-size:15px;line-height:1.9}
+  .none-txt .big{font-size:46px;display:block;margin-bottom:6px;opacity:.45}
+
+  /* Toast：移到屏幕下方，避开钞票墙 */
+  .toast{
+    position:fixed;left:50%;bottom:calc(96px + var(--safe-b));
+    transform:translateX(-50%) scale(.85);
+    background:rgba(74,55,40,.95);color:#fff;padding:15px 22px;border-radius:18px;
+    font-size:17px;font-weight:900;z-index:400;opacity:0;pointer-events:none;
+    transition:all .24s;text-align:center;line-height:1.5;
+    display:flex;flex-direction:column;align-items:center;gap:6px;max-width:88vw;
+  }
+  .toast.show{opacity:1;transform:translateX(-50%) scale(1)}
+  .toast .e{font-size:29px}
+  .toast .amt{display:flex;align-items:baseline;gap:2px;justify-content:center;flex-wrap:wrap}
+  .toast .amt b{font-variant-numeric:tabular-nums;font-size:19px}
+  .toast .amt s{font-size:11px;opacity:.8;text-decoration:none;margin-right:3px}
+
+  /* 撒钱：只在顶部 26vh 内飘落，避开钞票墙 */
+  .confetti{position:fixed;top:0;left:0;right:0;height:0;pointer-events:none;z-index:300}
+  .confetti i{position:absolute;top:-40px;font-style:normal;animation:fall linear forwards}
+  @keyframes fall{to{transform:translateY(26vh) rotate(540deg);opacity:0}}
+
+  /* iOS 提示 */
+  .ios-tip{
+    display:none;background:#FFF3E0;border:2px solid #FFE0B2;border-radius:13px;
+    padding:10px 12px;margin:0 0 11px;font-size:12.5px;font-weight:700;color:#E65100;
+    line-height:1.6;align-items:center;gap:8px;
+  }
+  .ios-tip.show{display:flex}
+  .ios-tip .ic{font-size:20px;flex-shrink:0}
+
+  @media(max-width:380px){
+    .ring-wrap{width:82px;height:82px}
+    .ring-yuan{font-size:23px}
+    .unit-box .v{font-size:20px}
+    .unit-box{padding:3px 7px}
+    .note[data-v="100"]{width:122px;height:55px;font-size:22px}
+    .note[data-v="50"]{width:108px;height:50px;font-size:20px}
+    .note[data-v="10"]{width:92px;height:45px;font-size:18px}
+    .note[data-v="5"]{width:82px;height:41px;font-size:17px}
+    .coin{width:46px;height:46px;font-size:15px}
+    .jiao{width:40px;height:40px;font-size:14px}
+    .fen{width:30px;height:30px;font-size:11px}
+  }
+</style>
+</head>
+<body>
+
+<!-- ========== 顶部 ========== -->
+<div class="header">
+  <div class="head-grid">
+    <div class="ring-wrap">
+      <svg viewBox="0 0 120 120">
+        <defs>
+          <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#FFD54F"/>
+            <stop offset="55%" stop-color="#FF9F43"/>
+            <stop offset="100%" stop-color="#E8453C"/>
+          </linearGradient>
+        </defs>
+        <circle class="ring-bg" cx="60" cy="60" r="51"/>
+        <circle class="ring-fg" id="ring" cx="60" cy="60" r="51"/>
+      </svg>
+      <div class="ring-center">
+        <div class="ring-yuan" id="ringYuan">200</div>
+        <div class="ring-unit">元</div>
+      </div>
+    </div>
+
+    <div class="head-right">
+      <div class="mood-line">
+        <span class="piggy">🐷</span>
+        <span class="mood" id="moodIco">😄</span>
+      </div>
+      <!-- 元角分三段 -->
+      <div class="yjf">
+        <div class="unit-box u-yuan" id="boxYuan"><span class="v">200</span><span class="u">元</span></div>
+        <div class="unit-box u-jiao zero" id="boxJiao"><span class="v">0</span><span class="u">角</span></div>
+        <div class="unit-box u-fen zero" id="boxFen"><span class="v">0</span><span class="u">分</span></div>
+      </div>
+      <div class="cmp-bar">
+        <div class="cmp-left" id="cmpLeft" style="width:100%">
+          <span class="cmp-ico">💰</span>
+        </div>
+        <div class="cmp-right" id="cmpRight" style="width:0%"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== 钞票墙 ========== -->
+<div class="stage">
+  <div class="money-wrap" id="moneyWrap"></div>
+</div>
+
+<!-- ========== 底部 ========== -->
+<div class="actions">
+  <button class="btn btn-buy" id="btnBuy">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+    买东西
+  </button>
+  <button class="btn btn-add" id="btnAdd">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    存钱
+  </button>
+</div>
+
+<!-- ========== 买东西 ========== -->
+<div class="sheet" id="sheetBuy">
+  <div class="echo" id="echoBuy">
+    <span class="p">🐷</span>
+    <span class="ev" id="echoBuyV">200元</span>
+  </div>
+  <div class="sheet-body">
+    <div class="sheet-head">
+      <div class="sheet-title">📷 买了什么</div>
+      <button class="close-x" data-close>✕</button>
+    </div>
+
+    <div id="stepCam">
+      <div class="ios-tip" id="iosTip">
+        <span class="ic">💡</span>
+        <span>相机打不开？点下面「从相册选」一样可以记账</span>
+      </div>
+      <div class="cam-box">
+        <video id="video" autoplay playsinline muted></video>
+        <div class="cam-ph" id="camPh">
+          <span class="big-ico">📷</span>
+          <span>点下面按钮开相机</span>
+        </div>
+      </div>
+      <canvas id="canvas"></canvas>
+      <div class="row2">
+        <button class="mini mini-o" id="btnOpenCam">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+          相机
+        </button>
+        <button class="mini mini-r" id="btnShot" style="flex:1.5">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M3 9h3l2-3h8l2 3h3v9H3z"/></svg>
+          拍下来
+        </button>
+      </div>
+      <div class="row2">
+        <button class="mini mini-o" id="btnPickFile">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+          从相册选
+        </button>
+      </div>
+      <input type="file" id="fileInput" accept="image/*" style="display:none">
+    </div>
+
+    <div id="stepConfirm" style="display:none">
+      <img class="shot" id="shotPreview" alt="">
+      <!-- 已选金额预览 -->
+      <div class="sum-preview" id="sumPreview" style="margin-top:12px"></div>
+      <!-- 元 -->
+      <div class="pick-block">
+        <div class="pick-head"><span class="dot d-yuan"></span>元</div>
+        <div class="chips" id="chipsYuan"></div>
+      </div>
+      <!-- 角 -->
+      <div class="pick-block">
+        <div class="pick-head"><span class="dot d-jiao"></span>角</div>
+        <div class="chips" id="chipsJiao"></div>
+      </div>
+      <!-- 分 -->
+      <div class="pick-block">
+        <div class="pick-head"><span class="dot d-fen"></span>分</div>
+        <div class="chips" id="chipsFen"></div>
+      </div>
+      <div class="row2">
+        <button class="mini mini-o" id="btnRetake">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg>
+          重拍
+        </button>
+        <button class="mini mini-r" id="btnConfirmBuy" style="flex:1.6">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+          就是这个
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== 存钱 ========== -->
+<div class="sheet" id="sheetAdd">
+  <div class="echo" id="echoAdd">
+    <span class="p">🐷</span>
+    <span class="ev" id="echoAddV">200元</span>
+  </div>
+  <div class="sheet-body">
+    <div class="sheet-head">
+      <div class="sheet-title">💰 存入多少</div>
+      <button class="close-x" data-close>✕</button>
+    </div>
+    <div class="sum-preview" id="addPreview"></div>
+    <div class="pick-block">
+      <div class="pick-head"><span class="dot d-yuan"></span>元</div>
+      <div class="chips" id="addYuan"></div>
+    </div>
+    <div class="pick-block">
+      <div class="pick-head"><span class="dot d-jiao"></span>角</div>
+      <div class="chips" id="addJiao"></div>
+    </div>
+    <div class="pick-block">
+      <div class="pick-head"><span class="dot d-fen"></span>分</div>
+      <div class="chips" id="addFen"></div>
+    </div>
+    <div class="row2">
+      <button class="mini mini-g" id="btnConfirmAdd" style="padding:16px;font-size:17px">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+        存进去
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ========== 历史 ========== -->
+<div class="sheet" id="sheetHistory">
+  <div class="sheet-body">
+    <div class="sheet-head">
+      <div class="sheet-title">🧾 买过的东西</div>
+      <button class="close-x" data-close>✕</button>
+    </div>
+    <div id="historyBox"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"><span class="e"></span><span id="toastText"></span></div>
+<div class="confetti" id="confetti"></div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ============================================================
+     核心：金额一律用「分」作整数存储和运算，绝不使用浮点数。
+     ¥1 = 10角 = 100分
+     ============================================================ */
+  var START_FEN = 20000;          // 初始基金 200元 = 20000分
+  var STORAGE_KEY = "kid_piggy_bank_v3";
+  var CIRC = 2 * Math.PI * 51;
+  var MAX_SHOW = 8;               // 单面额最多画几个
+
+  /* ---------- 元角分拆解（纯整数运算） ---------- */
+  function split(fen){
+    fen = Math.max(0, Math.round(fen));
+    var yuan = Math.floor(fen / 100);
+    var jiao = Math.floor((fen % 100) / 10);
+    var f    = fen % 10;
+    return {yuan:yuan, jiao:jiao, fen:f, total:fen};
+  }
+
+  /* 格式化成中文：1元8角5分 */
+  function fmt(fen){
+    var p = split(fen);
+    var s = "";
+    if(p.total === 0) return "0元";
+    if(p.yuan) s += p.yuan + "元";
+    if(p.jiao) s += p.jiao + "角";
+    if(p.fen)  s += p.fen + "分";
+    return s || "0元";
+  }
+
+  /* 生成元角分 HTML 片段 */
+  function fmtHTML(fen, skipZero){
+    var p = split(fen);
+    if(p.total === 0) return '<span class="sp-box"><span class="v" style="color:#BCAAA4">0</span><span class="u">元</span></span>';
+    var out = "";
+    if(p.yuan || (!skipZero && !p.jiao && !p.fen)) out += '<span class="sp-box sp-yuan"><span class="v">'+p.yuan+'</span><span class="u">元</span></span>';
+    if(p.jiao) out += '<span class="sp-box sp-jiao"><span class="v">'+p.jiao+'</span><span class="u">角</span></span>';
+    if(p.fen)  out += '<span class="sp-box sp-fen"><span class="v">'+p.fen+'</span><span class="u">分</span></span>';
+    return out;
+  }
+
+  /* ---------- 面额体系（单位：分） ---------- */
+  // 元票：100元/50元/10元/5元/1元   角币：5角/1角   分币：1分
+  var YUAN_NOTES = [ {fen:10000,v:100}, {fen:5000,v:50}, {fen:1000,v:10}, {fen:500,v:5} ];
+  var YUAN_COIN  = 100;    // 1元硬币
+  var JIAO_5 = 50, JIAO_1 = 10, FEN_1 = 1;
+
+  /* 拆解成面额组合 */
+  function breakdown(fen){
+    var r = Math.max(0, Math.round(fen));
+    var out = {n10000:0,n5000:0,n1000:0,n500:0,c100:0,j50:0,j10:0,f1:0};
+    while(r >= 10000){ out.n10000++; r -= 10000; }
+    while(r >= 5000){ out.n5000++; r -= 5000; }
+    while(r >= 1000){ out.n1000++; r -= 1000; }
+    while(r >= 500){ out.n500++; r -= 500; }
+    while(r >= 100){ out.c100++; r -= 100; }
+    while(r >= 50){ out.j50++; r -= 50; }
+    while(r >= 10){ out.j10++; r -= 10; }
+    out.f1 = r;   // 余下全是分
+    return out;
+  }
+
+  /* ---------- 状态 ---------- */
+  var state = { initial: START_FEN, added: 0, items: [] };
+
+  function load(){
+    try{
+      var raw = localStorage.getItem(STORAGE_KEY);
+      if(raw){
+        var d = JSON.parse(raw);
+        if(d && typeof d === "object"){
+          state.initial = (typeof d.initial === "number" && isFinite(d.initial)) ? Math.round(d.initial) : START_FEN;
+          state.added   = (typeof d.added   === "number" && isFinite(d.added))   ? Math.round(d.added)   : 0;
+          state.items   = Array.isArray(d.items) ? d.items.filter(function(x){
+            return x && typeof x.price === "number" && isFinite(x.price);
+          }).map(function(x){
+            return { id:String(x.id||""), price:Math.round(x.price), img:String(x.img||""), time:String(x.time||"") };
+          }) : [];
+        }
+      }
+    }catch(e){}
+  }
+  function save(){
+    try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+    catch(e){ toast("😥","存不下了","删掉一些旧记录吧"); }
+  }
+  function income(){ return state.initial + state.added; }
+  function spent(){
+    var s = 0;
+    for(var i=0;i<state.items.length;i++) s += state.items[i].price;
+    return s;
+  }
+  function balance(){ return income() - spent(); }
+
+  /* ---------- 渲染：顶部 ---------- */
+  var ring = document.getElementById("ring");
+  var ringYuan = document.getElementById("ringYuan");
+  var boxYuan = document.getElementById("boxYuan");
+  var boxJiao = document.getElementById("boxJiao");
+  var boxFen  = document.getElementById("boxFen");
+  var cmpLeft = document.getElementById("cmpLeft");
+  var cmpRight = document.getElementById("cmpRight");
+  var moodIco = document.getElementById("moodIco");
+  var echoBuyV = document.getElementById("echoBuyV");
+  var echoAddV = document.getElementById("echoAddV");
+
+  function renderTotal(animate){
+    var b = balance(), inc = income();
+    var pct = inc > 0 ? Math.max(0, Math.min(100, b / inc * 100)) : 0;
+    var p = split(b);
+
+    // 环形中心只显示整数元（空间有限）
+    ringYuan.textContent = p.yuan;
+    ring.style.strokeDashoffset = (CIRC * (1 - pct/100)).toFixed(2);
+
+    // 元角分三段
+    boxYuan.querySelector(".v").textContent = p.yuan;
+    boxJiao.querySelector(".v").textContent = p.jiao;
+    boxFen.querySelector(".v").textContent  = p.fen;
+    boxJiao.classList.toggle("zero", p.jiao === 0);
+    boxFen.classList.toggle("zero",  p.fen  === 0);
+    boxYuan.classList.toggle("zero", p.yuan === 0 && (p.jiao || p.fen));
+
+    // 悬浮余额：元 + 角分（有角分时全称，否则只显示元）
+    var echoTxt = (p.jiao || p.fen) ? fmt(b) : (p.yuan + "元");
+    echoBuyV.textContent = echoTxt;
+    echoAddV.textContent = echoTxt;
+
+    // 对比条
+    cmpLeft.style.width = pct + "%";
+    cmpRight.style.width = (100 - pct) + "%";
+    cmpLeft.querySelector(".cmp-ico").style.display = pct > 13 ? "" : "none";
+
+    // 情绪图标
+    if(b <= 0){ moodIco.textContent = "😭"; }
+    else if(pct >= 70){ moodIco.textContent = "😄"; }
+    else if(pct >= 40){ moodIco.textContent = "🙂"; }
+    else if(pct >= 18){ moodIco.textContent = "😟"; }
+    else { moodIco.textContent = "😰"; }
+
+    if(animate){
+      ringYuan.classList.remove("pop");
+      void ringYuan.offsetWidth;
+      ringYuan.classList.add("pop");
+      setTimeout(function(){ ringYuan.classList.remove("pop"); }, 230);
+    }
+  }
+
+  /* ---------- 渲染：钞票墙 ---------- */
+  var moneyWrap = document.getElementById("moneyWrap");
+  var stageEl = document.querySelector(".stage");
+
+  function makeNote(v){
+    var d = document.createElement("div");
+    d.className = "note"; d.dataset.v = v;
+    d.innerHTML = '<div class="pattern"></div><div class="cny">¥</div><div class="denom">'+v+'</div>';
+    return d;
+  }
+  function makeCoinYuan(){
+    var d = document.createElement("div");
+    d.className = "coin"; d.innerHTML = '1<small>元</small>';
+    return d;
+  }
+  function makeJiao(v){
+    var d = document.createElement("div");
+    d.className = "jiao"; d.innerHTML = v+'<small>角</small>';
+    return d;
+  }
+  function makeFen(){
+    var d = document.createElement("div");
+    d.className = "fen"; d.textContent = "1";
+    d.title = "1分";
+    return d;
+  }
+
+  function renderMoney(){
+    moneyWrap.innerHTML = "";
+    var b = balance();
+    if(b <= 0){
+      stageEl.classList.add("is-empty");
+      moneyWrap.innerHTML =
+        '<div class="empty-state">'+
+          '<div class="empty-jar">🫙</div>'+
+          '<div class="empty-bar"><i></i></div>'+
+          '<div class="empty-tip">钱花光啦</div>'+
+        '</div>';
+      return;
+    }
+    stageEl.classList.remove("is-empty");
+
+    var bk = breakdown(b);
+    var frag = document.createDocumentFragment();
+    var delay = 0;
+
+    function addEl(el){
+      el.style.animationDelay = (delay * 18) + "ms";
+      delay++;
+      frag.appendChild(el);
+    }
+
+    /* 元票：100 / 50 / 10 / 5 */
+    YUAN_NOTES.forEach(function(item){
+      var n = bk["n"+item.fen] || 0;
+      if(!n) return;
+      var show = Math.min(n, MAX_SHOW);
+      for(var i=0;i<show;i++) addEl(makeNote(item.v));
+      if(n > show){
+        var m = document.createElement("div");
+        m.className = "note more";
+        m.innerHTML = '<div class="denom">'+item.v+' ×'+n+'</div>';
+        frag.appendChild(m);
+      }
+    });
+
+    /* 1元硬币 */
+    var c100 = bk.c100;
+    if(c100){
+      var showC = Math.min(c100, MAX_SHOW);
+      for(var i=0;i<showC;i++) addEl(makeCoinYuan());
+      if(c100 > showC){
+        var mc = document.createElement("div");
+        mc.className = "coin"; mc.style.background = "#E0E0E0"; mc.style.color = "#6D4C41";
+        mc.textContent = "1×" + c100;
+        frag.appendChild(mc);
+      }
+    }
+
+    /* 角币：5角 / 1角 */
+    if(bk.j50 || bk.j10){
+      var lbl = document.createElement("div");
+      lbl.className = "grp";
+      lbl.innerHTML = '<span class="line"></span><span class="txt">🟢 角</span><span class="line"></span>';
+      frag.appendChild(lbl);
+    }
+    var show50 = Math.min(bk.j50, MAX_SHOW);
+    for(var i=0;i<show50;i++) addEl(makeJiao(5));
+    if(bk.j50 > show50){
+      var m50 = document.createElement("div");
+      m50.className = "jiao"; m50.style.background = "#E0E0E0"; m50.style.color = "#00695C";
+      m50.textContent = "5×" + bk.j50;
+      frag.appendChild(m50);
+    }
+    var show10 = Math.min(bk.j10, MAX_SHOW);
+    for(var j=0;j<show10;j++) addEl(makeJiao(1));
+    if(bk.j10 > show10){
+      var m10 = document.createElement("div");
+      m10.className = "jiao"; m10.style.background = "#E0E0E0"; m10.style.color = "#00695C";
+      m10.textContent = "1×" + bk.j10;
+      frag.appendChild(m10);
+    }
+
+    /* 分币 */
+    if(bk.f1){
+      var lbf = document.createElement("div");
+      lbf.className = "grp";
+      lbf.innerHTML = '<span class="line"></span><span class="txt">🟤 分</span><span class="line"></span>';
+      frag.appendChild(lbf);
+      var showF = Math.min(bk.f1, 10);
+      for(var k=0;k<showF;k++) addEl(makeFen());
+      if(bk.f1 > showF){
+        var mf = document.createElement("div");
+        mf.className = "fen"; mf.style.width = "auto"; mf.style.padding = "0 9px";
+        mf.style.borderRadius = "17px"; mf.style.width = "58px";
+        mf.textContent = "1×" + bk.f1;
+        frag.appendChild(mf);
+      }
+    }
+
+    moneyWrap.appendChild(frag);
+  }
+
+  function renderAll(animate){ renderTotal(animate); renderMoney(); }
+
+  /* ---------- Toast ---------- */
+  var toastEl = document.getElementById("toast");
+  var toastText = document.getElementById("toastText");
+  var toastE = toastEl.querySelector(".e");
+  var toastTimer = null;
+  function toast(emoji, mainHTML, sub){
+    toastE.textContent = emoji;
+    toastText.innerHTML = mainHTML + (sub ? '<div style="font-size:12.5px;opacity:.85;margin-top:5px;font-weight:700">'+sub+'</div>' : "");
+    toastEl.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function(){ toastEl.classList.remove("show"); }, 1900);
+  }
+  /* toast 里金额用元角分显示 */
+  function amtSpan(fen, label){
+    return '<div class="amt">'+(label?'<span style="font-size:13px;opacity:.9">'+label+'</span>':'')+fmtHTML(fen)+'</div>';
+  }
+
+  /* ---------- 撒钱（限制在顶部区域，不遮挡钞票墙） ---------- */
+  function confetti(){
+    var box = document.getElementById("confetti");
+    var es = ["💵","🪙","💰","✨","🎉"];
+    for(var i=0;i<22;i++){
+      var s = document.createElement("i");
+      s.textContent = es[Math.floor(Math.random()*es.length)];
+      s.style.left = (4 + Math.random()*92) + "%";
+      var dur = 1.2 + Math.random()*1.0;
+      s.style.animationDuration = dur+"s";
+      s.style.animationDelay = (Math.random()*.28)+"s";
+      s.style.fontSize = (15+Math.random()*16)+"px";
+      box.appendChild(s);
+      (function(el){ setTimeout(function(){ el.remove(); }, (dur+.6)*1000); })(s);
+    }
+  }
+
+  /* ---------- 弹层 ---------- */
+  function openSheet(id){ document.getElementById(id).classList.add("open"); }
+  function closeSheet(el){
+    el.classList.remove("open");
+    if(el.id === "sheetBuy"){ stopCamera(); resetBuy(); }
+  }
+  document.querySelectorAll(".sheet").forEach(function(sh){
+    sh.addEventListener("click", function(e){ if(e.target === sh) closeSheet(sh); });
+    sh.querySelectorAll("[data-close]").forEach(function(b){
+      b.addEventListener("click", function(){ closeSheet(sh); });
+    });
+  });
+
+  /* ---------- 相机 ---------- */
+  var video = document.getElementById("video");
+  var canvas = document.getElementById("canvas");
+  var camPh = document.getElementById("camPh");
+  var stream = null;
+  var photo = null;
+
+  function stopCamera(){
+    if(stream){ stream.getTracks().forEach(function(t){ t.stop(); }); stream = null; }
+    video.srcObject = null;
+    camPh.classList.remove("hide");
+  }
+  function startCamera(){
+    if(stream) return;
+    if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+      document.getElementById("iosTip").classList.add("show");
+      return;
+    }
+    navigator.mediaDevices.getUserMedia({
+      video:{ facingMode:{ideal:"environment"}, width:{ideal:1280}, height:{ideal:960} },
+      audio:false
+    }).then(function(s){
+      stream = s; video.srcObject = s;
+      camPh.classList.add("hide");
+      return video.play();
+    }).catch(function(err){
+      console.warn("camera fail", err);
+      document.getElementById("iosTip").classList.add("show");
+      toast("📁","用「从相册选」吧","相机没能打开");
+    });
+  }
+  function resetBuy(){
+    photo = null; picked = {yuan:0, jiao:0, fen:0};
+    document.getElementById("stepCam").style.display = "block";
+    document.getElementById("stepConfirm").style.display = "none";
+    buildBuyPickers();
+  }
+  function showConfirm(url){
+    photo = url;
+    document.getElementById("shotPreview").src = url;
+    document.getElementById("stepCam").style.display = "none";
+    document.getElementById("stepConfirm").style.display = "block";
+    buildBuyPickers();
+  }
+  document.getElementById("btnOpenCam").addEventListener("click", startCamera);
+
+  document.getElementById("btnShot").addEventListener("click", function(){
+    if(!stream){ startCamera(); return; }
+    var w = video.videoWidth, h = video.videoHeight;
+    if(!w || !h){ toast("⏳","相机还在准备","稍等一下"); return; }
+    var sc = Math.min(1, 720/Math.max(w,h));
+    canvas.width = Math.round(w*sc); canvas.height = Math.round(h*sc);
+    canvas.getContext("2d").drawImage(video, 0, 0, canvas.width, canvas.height);
+    var url = canvas.toDataURL("image/jpeg", 0.72);
+    stopCamera(); showConfirm(url);
+  });
+  document.getElementById("btnPickFile").addEventListener("click", function(){
+    document.getElementById("fileInput").click();
+  });
+  document.getElementById("fileInput").addEventListener("change", function(e){
+    var f = e.target.files && e.target.files[0];
+    if(!f) return;
+    var rd = new FileReader();
+    rd.onload = function(ev){
+      var img = new Image();
+      img.onload = function(){
+        var w = img.width, h = img.height;
+        var sc = Math.min(1, 720/Math.max(w,h));
+        canvas.width = Math.round(w*sc); canvas.height = Math.round(h*sc);
+        canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
+        stopCamera(); showConfirm(canvas.toDataURL("image/jpeg", 0.72));
+      };
+      img.src = ev.target.result;
+    };
+    rd.readAsDataURL(f);
+    e.target.value = "";
+  });
+  document.getElementById("btnRetake").addEventListener("click", function(){
+    resetBuy(); startCamera();
+  });
+
+  /* ---------- 元角分三级选价 ---------- */
+  var YUAN_OPTS = [0,1,2,3,5,8,10,15,20,30,50];
+  var JIAO_OPTS = [0,1,2,3,5,8];
+  var FEN_OPTS  = [0,1,2,3,5,8];
+  var picked = {yuan:0, jiao:0, fen:0};
+
+  function pickedFen(){ return picked.yuan*100 + picked.jiao*10 + picked.fen; }
+
+  function renderPreview(boxId){
+    var box = document.getElementById(boxId);
+    var t = pickedFen();
+    if(t === 0){
+      box.innerHTML = '<span class="empty-sum">点下面选金额</span>';
+    }else{
+      box.innerHTML = fmtHTML(t, true);
+    }
+  }
+
+  function buildPicker(boxId, opts, unitKind, key){
+    var box = document.getElementById(boxId);
+    box.innerHTML = "";
+    opts.forEach(function(v){
+      var b = document.createElement("button");
+      b.className = "chip";
+      b.dataset.v = v;
+      var unitTxt = unitKind === "yuan" ? "元" : unitKind === "jiao" ? "角" : "分";
+      b.innerHTML = v + '<small>'+unitTxt+'</small>';
+      b.classList.add(unitKind === "yuan" ? "c-yuan" : unitKind === "jiao" ? "c-jiao" : "c-fen");
+      if(picked[key] === v) b.classList.add("sel");
+      b.addEventListener("click", function(){
+        picked[key] = v;
+        box.querySelectorAll(".chip").forEach(function(x){ x.classList.remove("sel"); });
+        b.classList.add("sel");
+        renderPreview("sumPreview");
+        refreshBuyLimits();
+      });
+      box.appendChild(b);
+    });
+  }
+
+  /* 按余额禁用超出的选项 */
+  function refreshBuyLimits(){
+    var bal = balance();
+    [["chipsYuan","yuan",100],["chipsJiao","jiao",10],["chipsFen","fen",1]].forEach(function(cfg){
+      var key = cfg[1], mult = cfg[2];
+      document.querySelectorAll("#"+cfg[0]+" .chip").forEach(function(ch){
+        var v = +ch.dataset.v;
+        // 其余两段取当前值，算总和是否超余额
+        var others = 0;
+        ["yuan","jiao","fen"].forEach(function(k){
+          if(k !== key) others += picked[k] * (k==="yuan"?100:k==="jiao"?10:1);
+        });
+        var total = others + v*mult;
+        ch.classList.toggle("dis", total > bal);
+      });
+    });
+  }
+
+  function buildBuyPickers(){
+    renderPreview("sumPreview");
+    buildPicker("chipsYuan", YUAN_OPTS, "yuan", "yuan");
+    buildPicker("chipsJiao", JIAO_OPTS, "jiao", "jiao");
+    buildPicker("chipsFen",  FEN_OPTS,  "fen",  "fen");
+    refreshBuyLimits();
+  }
+
+  /* ---------- 确认购买 ---------- */
+  document.getElementById("btnConfirmBuy").addEventListener("click", function(){
+    if(!photo){ toast("📷","先拍张照片"); return; }
+    var price = pickedFen();
+    if(price <= 0){ toast("🪙","选个金额"); return; }
+    if(price > balance()){ toast("😯","钱不够","挑个便宜点的"); return; }
+
+    state.items.unshift({
+      id: Date.now() + "_" + Math.random().toString(36).slice(2,7),
+      price: price,
+      img: photo,
+      time: new Date().toLocaleString("zh-CN",{month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit"})
+    });
+    save();
+    closeSheet(document.getElementById("sheetBuy"));
+    flyAway(price);
+    toast("🛒", amtSpan(price, "花掉"), "还剩 " + fmt(balance()));
+    renderAll(true);
+    setTimeout(confetti, 280);
+  });
+
+  function flyAway(amountFen){
+    var els = moneyWrap.querySelectorAll(".note,.coin,.jiao,.fen");
+    // 按金额大小决定飞走几个
+    var n = Math.min(8, Math.max(2, Math.round(amountFen / 300) + 1));
+    for(var i=0;i<n && i<els.length;i++){
+      (function(el, idx){
+        setTimeout(function(){
+          el.classList.add("gone");
+          setTimeout(function(){ renderMoney(); }, 520);
+        }, idx * 55);
+      })(els[i], i);
+    }
+  }
+
+  /* ---------- 存钱 ---------- */
+  var addPicked = {yuan:0, jiao:0, fen:0};
+
+  function addFen(){ return addPicked.yuan*100 + addPicked.jiao*10 + addPicked.fen; }
+
+  function buildAddPickers(){
+    ["addPreview"].forEach(function(id){
+      var box = document.getElementById(id);
+      var t = addFen();
+      box.innerHTML = t === 0 ? '<span class="empty-sum">点下面选金额</span>' : fmtHTML(t, true);
+    });
+    [["addYuan", YUAN_OPTS, "yuan","yuan"],["addJiao", JIAO_OPTS, "jiao","jiao"],["addFen", FEN_OPTS, "fen","fen"]].forEach(function(cfg){
+      var box = document.getElementById(cfg[0]);
+      box.innerHTML = "";
+      cfg[1].forEach(function(v){
+        var b = document.createElement("button");
+        b.className = "chip";
+        b.dataset.v = v;
+        var unitTxt = cfg[2] === "yuan" ? "元" : cfg[2] === "jiao" ? "角" : "分";
+        b.innerHTML = v + '<small>'+unitTxt+'</small>';
+        b.classList.add(cfg[2]==="yuan" ? "c-yuan" : cfg[2]==="jiao" ? "c-jiao" : "c-fen");
+        if(addPicked[cfg[3]] === v) b.classList.add("sel");
+        b.addEventListener("click", function(){
+          addPicked[cfg[3]] = v;
+          box.querySelectorAll(".chip").forEach(function(x){ x.classList.remove("sel"); });
+          b.classList.add("sel");
+          var t = addFen();
+          document.getElementById("addPreview").innerHTML =
+            t === 0 ? '<span class="empty-sum">点下面选金额</span>' : fmtHTML(t, true);
+        });
+        box.appendChild(b);
+      });
+    });
+  }
+
+  document.getElementById("btnAdd").addEventListener("click", function(){
+    addPicked = {yuan:0, jiao:0, fen:0};
+    buildAddPickers();
+    openSheet("sheetAdd");
+  });
+  document.getElementById("btnConfirmAdd").addEventListener("click", function(){
+    var p = addFen();
+    if(p <= 0){ toast("🪙","选个金额"); return; }
+    state.added += p;
+    save();
+    closeSheet(document.getElementById("sheetAdd"));
+    toast("🎁", amtSpan(p, "存入"), "现在有 " + fmt(balance()));
+    renderAll(true); confetti();
+  });
+
+  /* ---------- 买东西主按钮 ---------- */
+  document.getElementById("btnBuy").addEventListener("click", function(){
+    resetBuy();
+    openSheet("sheetBuy");
+    startCamera();
+  });
+
+  /* ---------- 历史 ---------- */
+  var historyBox = document.getElementById("historyBox");
+  function renderHistory(){
+    if(!state.items.length){
+      historyBox.innerHTML = '<div class="none-txt"><span class="big">🛍️</span>还没有买过东西</div>';
+      return;
+    }
+    var maxP = 0;
+    state.items.forEach(function(it){ if(it.price > maxP) maxP = it.price; });
+    var g = document.createElement("div");
+    g.className = "hist-grid";
+    state.items.forEach(function(it){
+      var d = document.createElement("div");
+      d.className = "hist";
+      var w = maxP > 0 ? Math.max(12, it.price / maxP * 100) : 12;
+      var p = split(it.price);
+      var tagTxt = "";
+      if(p.yuan) tagTxt += p.yuan + '<small>元</small>';
+      if(p.jiao) tagTxt += p.jiao + '<small>角</small>';
+      if(p.fen)  tagTxt += p.fen  + '<small>分</small>';
+      if(!tagTxt) tagTxt = "0";
+      d.innerHTML =
+        '<img src="'+it.img+'" alt="">'+
+        '<div class="tag">'+tagTxt+'</div>'+
+        '<div class="hbar" style="width:'+w+'%"></div>'+
+        '<button class="del">🗑</button>';
+      d.querySelector(".del").addEventListener("click", function(ev){
+        ev.stopPropagation();
+        if(!confirm("删除这条？钱会退回来")) return;
+        var idx = -1;
+        for(var i=0;i<state.items.length;i++){ if(state.items[i].id === it.id){ idx = i; break; } }
+        if(idx >= 0){
+          var back = state.items[idx].price;
+          state.items.splice(idx, 1);
+          save();
+          renderAll(true); renderHistory();
+          toast("↩️","退回来了","现在有 " + fmt(balance()));
+        }
+      });
+      g.appendChild(d);
+    });
+    historyBox.innerHTML = "";
+    historyBox.appendChild(g);
+  }
+
+  var piggy = document.querySelector(".piggy");
+  piggy.addEventListener("dblclick", function(){ renderHistory(); openSheet("sheetHistory"); });
+  var piggyTimer = null;
+  piggy.addEventListener("touchstart", function(){
+    piggyTimer = setTimeout(function(){
+      if(navigator.vibrate) navigator.vibrate(28);
+      renderHistory(); openSheet("sheetHistory");
+    }, 620);
+  }, {passive:true});
+  ["touchend","touchmove","touchcancel"].forEach(function(ev){
+    piggy.addEventListener(ev, function(){ clearTimeout(piggyTimer); }, {passive:true});
+  });
+
+  /* ---------- 初始化 ---------- */
+  ring.setAttribute("stroke-dasharray", CIRC.toFixed(2));
+  ring.setAttribute("stroke-dashoffset", "0");
+  load();
+  renderAll(false);
+  if(!state.items.length && state.added === 0){
+    setTimeout(function(){ toast("👋","点下面开始吧"); }, 600);
+  }
+  document.addEventListener("gesturestart", function(e){ e.preventDefault(); });
+})();
+</script>
+</body>
+</html>
