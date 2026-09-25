@@ -75,7 +75,7 @@ console.log("\n=== 2. 初始状态 ===");
 eq("初始余额 = 200元", byId("balNum").textContent.trim(), "200");
 const initialLvl = byId("pigLvl").textContent.trim();
 ok("小猪初始满度文案非空", initialLvl.length > 0, initialLvl);
-ok("小猪满度 '满了' 与初始 200/200 相符", initialLvl.indexOf("满") >= 0, initialLvl);
+ok("小猪首次打开不是一上来就满（默认目标 500元 → 40%）", initialLvl === "40%", initialLvl);
 const lvl0 = byId("pigLiquid").style.transform;
 ok("小猪水位已设 transform", /translateY/.test(lvl0), lvl0);
 

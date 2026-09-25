@@ -831,6 +831,8 @@
      核心：金额一律用「分」作整数存储和运算，绝不使用浮点数。
      ============================================================ */
   var START_FEN = 20000;          // 初始基金 200元 = 20000分
+  var GOAL_FEN  = 50000;          // 默认存钱目标 500元：首次打开小猪装 40%，
+                                  // 一眼看出"还能继续存"，而不是一上来就"满了"
   var STORAGE_KEY = "kid_piggy_bank_v3";
   var CIRC = 2 * Math.PI * 51;
   var MAX_SHOW = 8;               // 单面额最多画几个
@@ -1104,7 +1106,7 @@
   }
 
   /* ---------- 状态 ---------- */
-  var state = { initial: START_FEN, added: 0, items: [], deposits: [], goal: START_FEN };
+  var state = { initial: START_FEN, added: 0, items: [], deposits: [], goal: GOAL_FEN };
 
   function num(v, def){ return (typeof v === "number" && isFinite(v)) ? Math.round(v) : def; }
 
@@ -1116,7 +1118,7 @@
       if(!d || typeof d !== "object") return;
       state.initial = num(d.initial, START_FEN);
       state.added   = num(d.added, 0);
-      state.goal    = Math.max(1, num(d.goal, START_FEN));
+      state.goal    = Math.max(1, num(d.goal, GOAL_FEN));
       state.items   = Array.isArray(d.items) ? d.items.filter(function(x){
         return x && typeof x.price === "number" && isFinite(x.price);
       }).map(function(x){
