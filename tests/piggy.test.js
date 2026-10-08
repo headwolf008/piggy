@@ -40,6 +40,12 @@ function grabImgs(varName) {
 }
 const RMB = grabImgs("RMB");
 const RMB_HD = grabImgs("RMB_HD");
+const RMB_CLEAN = {
+  n100: "assets/rmb100-clean.jpg",
+  n10: "assets/rmb10-clean.jpg",
+  n1: "assets/rmb1-clean.jpg",
+  c1: "assets/rmb1fen-clean.jpg"
+};
 
 let pass = 0, fail = 0;
 const fails = [];
@@ -87,13 +93,9 @@ function boot(seed) {
   const badge  = () => byId("histCount").textContent.trim();
   const rows   = () => $$("#historyBox .hrow");
 
-  /* 小猪肚子的水位百分比：从 #pigLiquid 的 translateY 反推
-     Y = 136 - 96*pct/100 + 5  →  pct = (141 - Y) / 96 * 100 */
-  const PIGPCT = () => {
-    const m = /translateY\(([-\d.]+)px\)/.exec(byId("pigLiquid").style.transform || "");
-    if (!m) return -1;
-    return (141 - parseFloat(m[1])) / 96 * 100;
-  };
+  /* 小猪现在用金币数量表示百分比，百分比写在 pigLiquid 的 data-percent 上。 */
+  const PIGPCT = () => Number(byId("pigLiquid").getAttribute("data-percent"));
+  const PIGCOINS = () => Number(byId("pigLiquid").getAttribute("data-coins"));
 
   const buy = (y, j, f) => {
     click(byId("btnBuy"));
@@ -102,7 +104,7 @@ function boot(seed) {
     click(byId("btnConfirmBuy"));
   };
   const saved = () => JSON.parse(win.localStorage.getItem("kid_piggy_bank_v3") || "{}");
-  return { dom, win, doc, byId, $, $$, click, setVal, typeAmt, balNum, badge, rows, PIGPCT, buy, saved, errors,
+  return { dom, win, doc, byId, $, $$, click, setVal, typeAmt, balNum, badge, rows, PIGPCT, PIGCOINS, buy, saved, errors,
            close: () => win.close() };
 }
 
@@ -110,14 +112,16 @@ console.log("=== 1. 结构化：该有的在，该删的没了 ===");
 {
   const t = boot();
   ["piggyBox","pigLiquid","balNum","balUnit","wlSub","periodTag","histCount","btnHistory",
-   "btnBook","btnBuy","btnNew","sheetBuy","sheetHistory","sheetBook","sheetEdit","zoom",
-   "zoomImg","zoomTitle","zoomCnt","zoomPrev","zoomNext","zoomIn","zoomOut","zoomClose"].forEach(id => {
+           "btnBook","btnBuy","btnNew","sheetBuy","sheetHistory","sheetBook","sheetEdit","zoom",
+           "zoomImg","zoomTitle","zoomCnt","zoomPrev","zoomNext","zoomIn","zoomOut","zoomClose"].forEach(id => {
     ok("存在 #" + id, !!t.byId(id));
   });
   ["tankWater","tankPct","btnAdd","sheetAdd","addYuan","sheetGoal","goalChips","btnGoal"].forEach(id => {
     ok("已删除 #" + id, !t.byId(id));
   });
   ok("页面里已无 .tank 进度条", !t.$(".tank"));
+  ok("记账本有固定最大高度", /#sheetHistory \.sheet-body[\s\S]*height:min\(88vh,720px\)/.test(html));
+  ok("记账本只让记录区滚动", /#sheetHistory #historyBox[\s\S]*overflow-y:auto/.test(html));
   ok("页面里已无「存钱」入口文案", html.indexOf(">存钱<") < 0 && html.indexOf("💰 存入多少") < 0);
   ok("脚本里已无存钱金额面板绑定", html.indexOf('"addYuan"') < 0 && html.indexOf("btnConfirmAdd") < 0);
   t.close();
@@ -127,18 +131,33 @@ console.log("\n=== 2. 真人民币照片（显示版） ===");
 {
   const t = boot();
   const imgs = t.$$("#moneyWrap img");
-  ok("钱排里的图都是内联真照片", imgs.length > 0 && imgs.every(i => i.src.indexOf("data:image/jpeg;base64,") === 0),
+  ok("钱排里的图都是内联真照片或定点清理素材", imgs.length > 0 && imgs.every(i => i.src.indexOf("data:image/jpeg;base64,") === 0 || Object.values(RMB_CLEAN).some(src => i.src.endsWith(src))),
      "共 " + imgs.length + " 张");
   ok("每张图都带 data-k（点开能放大）", imgs.every(i => !!i.dataset.k));
+  ok("照片墙图片可以接收点击", /#moneyWrap img\{pointer-events:auto;cursor:zoom-in;\}/.test(html));
   ok("不再有手绘钞票 symbol", html.indexOf('id="bk100"') < 0 && html.indexOf("#sprite") < 0);
   t.click(t.byId("btnBook"));
   const cards = t.$$("#bookGrid .bk-card");
   eq("图鉴卡片数 = 11", cards.length, 11);
   const bImgs = t.$$("#bookGrid img");
   ok("图鉴每张都有 data-k 且是真照片",
-     bImgs.length === 11 && bImgs.every(i => i.dataset.k && i.src.indexOf("data:image/jpeg;base64,") === 0));
-  ok("图鉴里都是内联图（不依赖外链）", bImgs.every(i => i.getAttribute("src").length > 500));
+     bImgs.length === 11 && bImgs.every(i => i.dataset.k && (i.src.indexOf("data:image/jpeg;base64,") === 0 || Object.values(RMB_CLEAN).some(src => i.src.endsWith(src)))));
+  ok("重点四张使用清理后的高清素材",
+     ["n100","n10","n1","c1"].every(k => t.$('#bookGrid img[data-k="'+k+'"]')?.getAttribute("src").endsWith(RMB_CLEAN[k])));
+  const bookNames = Array.from(t.$$("#bookGrid .bk-card .t1")).map(el => el.textContent.trim());
+  ok("图鉴包含 5 分硬币且使用 c5 素材", bookNames.includes("5分硬币") && t.$$("#bookGrid img")[9].dataset.k === "c5");
+  ok("1 元硬币标签不再显示 c 元", !t.$$("#bookGrid img")[6].alt.includes("c元"), t.$$("#bookGrid img")[6].alt);
+  ok("10元使用无裁切比例的显示框", /\.note\[data-v="10"\]\s*\{width:112px;height:58px\}/.test(html));
+  ok("纸币图片不再用 cover 裁切", /\.note img\{[^}]*object-fit:fill/.test(html));
+  ok("1分硬币保持正圆显示尺寸", /\.fen\{width:34px;height:34px\}/.test(html));
   t.close();
+}
+
+console.log("\n=== 2.5. 写实陶瓷小猪存钱罐 ===");
+{
+  ok("小猪改为写实陶瓷渐变造型", /viewBox="0 0 240 180"/.test(html) && /id="ceramicBody"/.test(html));
+  ok("整只小猪改为透明金币容器", /id="pigClip"/.test(html) && /fill-opacity="\.18"/.test(html) && /data-coin="44"/.test(html));
+  ok("旧卡通圆脸鼻子绘制已移除", !/ellipse cx="100" cy="96" rx="29"/.test(html));
 }
 
 console.log("\n=== 3. 高清放大版：分辨率必须高于显示版 ===");
@@ -169,8 +188,9 @@ console.log("\n=== 4. 点开人民币 → 全屏放大 ===");
   t.click(firstImg);
   ok("放大层已打开", t.byId("zoom").classList.contains("open"));
   const hdSrc = t.byId("zoomImg").getAttribute("src");
-  ok("用的是高清版大图（且和显示版不是同一张）",
-     hdSrc === RMB_HD[k] && hdSrc !== firstImg.getAttribute("src"), k);
+  ok("用的是清理后的高清大图",
+     (RMB_CLEAN[k] ? hdSrc.endsWith(RMB_CLEAN[k]) : hdSrc === RMB_HD[k]) &&
+       (RMB_CLEAN[k] ? hdSrc === firstImg.getAttribute("src") : hdSrc !== firstImg.getAttribute("src")), k);
   ok("标题写清是什么钱", /元/.test(t.byId("zoomTitle").textContent.trim()), t.byId("zoomTitle").textContent);
   eq("计数从第 1 张开始", t.byId("zoomCnt").textContent.trim(), "1 / 11");
 
@@ -197,14 +217,19 @@ console.log("\n=== 4. 点开人民币 → 全屏放大 ===");
 console.log("\n=== 5. 反向水位：一打开是满的，花掉往下降 ===");
 {
   const t = boot();
+  eq("小猪金币图案数量 = 44", t.$$("#pigLiquid .pigCoin").length, 44);
   eq("初始余额 = 200 元", t.balNum(), "200");
-  ok("小猪一开始是满的（100%）", Math.abs(t.PIGPCT() - 100) < 0.01, String(t.PIGPCT()));
+  ok("横向进度条已删除", !t.byId("balancePct") && !t.byId("balancePctFill") && !t.$(".pct-track"));
+  ok("小猪一开始是满的（100% / 44枚金币）", t.PIGPCT() === 100 && t.PIGCOINS() === 44,
+     t.PIGPCT() + "% / " + t.PIGCOINS() + "枚");
   t.buy(50, 0, 0);
   eq("花 50 元后余额 = 150", t.balNum(), "150");
-  ok("水位掉到 75%", Math.abs(t.PIGPCT() - 75) < 0.6, String(t.PIGPCT()));
+  ok("花 50 元后小猪金币表示 75%（33枚）", t.PIGPCT() === 75 && t.PIGCOINS() === 33,
+     t.PIGPCT() + "% / " + t.PIGCOINS() + "枚");
   t.buy(150, 0, 0);
   eq("再花 150 元余额 = 0", t.balNum(), "0");
-  ok("水位到 0%（一滴不剩）", Math.abs(t.PIGPCT()) < 0.01, String(t.PIGPCT()));
+  ok("小猪金币到 0%（一枚不剩）", t.PIGPCT() === 0 && t.PIGCOINS() === 0,
+     t.PIGPCT() + "% / " + t.PIGCOINS() + "枚");
   eq("归零时单位显示「元」不是「分」", t.byId("balUnit").textContent.trim(), "元");
   t.close();
 }
